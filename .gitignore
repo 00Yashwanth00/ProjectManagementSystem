@@ -1,0 +1,10 @@
+/target/
+/.idea/
+/.vscode/
+*.iml
+.env
+application-local.yml
+/E_RDiagram_files/
+*.mdj
+*.txt
+E_RDiagram.html
