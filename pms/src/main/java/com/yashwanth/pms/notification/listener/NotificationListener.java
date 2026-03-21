@@ -60,4 +60,12 @@ public class NotificationListener {
 
         notificationService.notifyUser(event.getUserId(), NotificationType.TASK_STATUS_CHANGED, message);
     }
+
+    @EventListener
+    public void handleIssueStatusChanged(IssueStatusChangedEvent event) {
+
+        String message = "Issue status change: \"%s\" by (%s)".formatted(event.getTitle(), event.getChangedBy());
+
+        notificationService.notifyUser(event.getUserId(), NotificationType.ISSUE_STATUS_CHANGED, message);
+    }
 }

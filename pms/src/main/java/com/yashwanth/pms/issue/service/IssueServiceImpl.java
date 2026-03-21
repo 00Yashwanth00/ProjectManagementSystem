@@ -3,6 +3,7 @@ package com.yashwanth.pms.issue.service;
 import com.yashwanth.pms.common.exception.AccessDeniedException;
 import com.yashwanth.pms.common.exception.ResourceNotFoundException;
 import com.yashwanth.pms.events.IssueAssignedEvent;
+import com.yashwanth.pms.events.IssueStatusChangedEvent;
 import com.yashwanth.pms.issue.domain.Issue;
 import com.yashwanth.pms.issue.domain.IssuePriority;
 import com.yashwanth.pms.issue.domain.IssueStatus;
@@ -84,8 +85,11 @@ public class IssueServiceImpl implements IssueService {
             }
         }
 
+        IssueStatus currentStatus = issue.getStatus();
         issue.changeStatus(IssueStatus.valueOf(newStatus));
         issueRepository.save(issue);
+
+        publisher.publishEvent(new IssueStatusChangedEvent(issueId, issue.getReporter().getId(), currentStatus, IssueStatus.valueOf(newStatus), issue.getAssignee().getName(), issue.getTitle()));
     }
 
     @Override

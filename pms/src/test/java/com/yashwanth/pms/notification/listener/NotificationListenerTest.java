@@ -1,6 +1,7 @@
 package com.yashwanth.pms.notification.listener;
 
 import com.yashwanth.pms.events.*;
+import com.yashwanth.pms.issue.domain.IssueStatus;
 import com.yashwanth.pms.notification.service.NotificationService;
 import com.yashwanth.pms.task.domain.TaskStatus;
 import org.junit.jupiter.api.BeforeEach;
@@ -128,6 +129,20 @@ class NotificationListenerTest {
         TaskStatusChangedEvent event = new TaskStatusChangedEvent(task, user, TaskStatus.TODO, TaskStatus.IN_PROGRESS, "test user", "test task");
 
         listener.handleTaskStatusChanged(event);
+
+        verify(notificationService, times(1))
+                .notifyUser(eq(user), any(), any());
+    }
+
+    @Test
+    void notifyOnIssueStatusChange() {
+
+        UUID issue = UUID.randomUUID();
+        UUID user = UUID.randomUUID();
+
+        IssueStatusChangedEvent event = new IssueStatusChangedEvent(issue, user, IssueStatus.OPEN, IssueStatus.IN_PROGRESS, "test user", "test issue");
+
+        listener.handleIssueStatusChanged(event);
 
         verify(notificationService, times(1))
                 .notifyUser(eq(user), any(), any());
