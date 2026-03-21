@@ -1,9 +1,6 @@
 package com.yashwanth.pms.notification.listener;
 
-import com.yashwanth.pms.events.CommentAddedEvent;
-import com.yashwanth.pms.events.IssueAssignedEvent;
-import com.yashwanth.pms.events.ProjectMemberAddedEvent;
-import com.yashwanth.pms.events.TaskAssignedEvent;
+import com.yashwanth.pms.events.*;
 import com.yashwanth.pms.notification.domain.NotificationType;
 import com.yashwanth.pms.notification.service.NotificationService;
 import org.springframework.context.event.EventListener;
@@ -54,5 +51,13 @@ public class NotificationListener {
             notificationService.notifyUser(userId, NotificationType.PROJECT_MEMBER_ADDED, message);
         }
 
+    }
+
+    @EventListener
+    public void handleTaskStatusChanged(TaskStatusChangedEvent event) {
+
+        String message = "Task status change: \"%s\" by (%s)".formatted(event.getTitle(), event.getChangedBy());
+
+        notificationService.notifyUser(event.getUserId(), NotificationType.TASK_STATUS_CHANGED, message);
     }
 }

@@ -3,6 +3,7 @@ package com.yashwanth.pms.task.service;
 import com.yashwanth.pms.common.exception.AccessDeniedException;
 import com.yashwanth.pms.common.exception.ResourceNotFoundException;
 import com.yashwanth.pms.events.TaskAssignedEvent;
+import com.yashwanth.pms.events.TaskStatusChangedEvent;
 import com.yashwanth.pms.project.domain.Project;
 import com.yashwanth.pms.project.repository.ProjectRepository;
 import com.yashwanth.pms.project.service.ProjectService;
@@ -94,10 +95,13 @@ public class TaskServiceImpl implements TaskService {
                     "You are not allowed to change this task status");
         }
 
+        TaskStatus currentStatus = task.getStatus();
         TaskStatus targetStatus = TaskStatus.valueOf(newStatus);
         task.changeStatus(targetStatus);
 
         taskRepository.save(task);
+
+        publisher.publishEvent(new TaskStatusChangedEvent(task.getId(), task.getCreatedBy().getId(), currentStatus, targetStatus, "%s(%s)".formatted(task.getAssignee().getName(), task.getAssignee().getEmail()), task.getTitle()));
     }
 
     @Override
