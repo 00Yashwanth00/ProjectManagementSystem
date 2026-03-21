@@ -2,6 +2,7 @@ package com.yashwanth.pms.notification.listener;
 
 import com.yashwanth.pms.events.CommentAddedEvent;
 import com.yashwanth.pms.events.IssueAssignedEvent;
+import com.yashwanth.pms.events.ProjectMemberAddedEvent;
 import com.yashwanth.pms.events.TaskAssignedEvent;
 import com.yashwanth.pms.notification.service.NotificationService;
 import org.junit.jupiter.api.BeforeEach;
@@ -30,7 +31,7 @@ class NotificationListenerTest {
     }
 
     @Test
-    void shouldSendNotificationOnTaskAssigned() {
+    void notifyOnTaskAssigned() {
 
         UUID userId = UUID.randomUUID();
 
@@ -53,7 +54,7 @@ class NotificationListenerTest {
 
 
     @Test
-    void shouldSendNotificationOnIssueAssigned() {
+    void notifyOnIssueAssigned() {
 
         UUID userId = UUID.randomUUID();
 
@@ -77,7 +78,7 @@ class NotificationListenerTest {
     }
 
     @Test
-    void shouldSendNotificationToAllUsersOnCommentAdded() {
+    void notifyToAllUsersOnCommentAdded() {
 
         UUID user1 = UUID.randomUUID();
         UUID user2 = UUID.randomUUID();
@@ -89,6 +90,26 @@ class NotificationListenerTest {
                 );
 
         listener.handleCommentAdded(event);
+
+        verify(notificationService, times(1))
+                .notifyUser(eq(user1), any(), any());
+
+        verify(notificationService, times(1))
+                .notifyUser(eq(user2), any(), any());
+
+        verify(notificationService, times(2))
+                .notifyUser(any(), any(), any());
+    }
+
+    @Test
+    void notifyToAllMembersOnNewMemberAdded() {
+
+        UUID user1 = UUID.randomUUID();
+        UUID user2 = UUID.randomUUID();
+
+        ProjectMemberAddedEvent event = new ProjectMemberAddedEvent("Test Project", "test member", "user@test.com", List.of(user1, user2));
+
+        listener.handleProjectMemberAdded(event);
 
         verify(notificationService, times(1))
                 .notifyUser(eq(user1), any(), any());

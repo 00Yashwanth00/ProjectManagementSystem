@@ -3,14 +3,18 @@ package com.yashwanth.pms.project.service;
 import com.yashwanth.pms.common.exception.AccessDeniedException;
 import com.yashwanth.pms.common.exception.BusinessException;
 import com.yashwanth.pms.common.exception.ResourceNotFoundException;
+import com.yashwanth.pms.events.ProjectMemberAddedEvent;
 import com.yashwanth.pms.project.domain.Project;
 import com.yashwanth.pms.project.domain.ProjectStatus;
 import com.yashwanth.pms.project.repository.ProjectRepository;
 import com.yashwanth.pms.user.domain.Role;
 import com.yashwanth.pms.user.domain.User;
 import com.yashwanth.pms.user.service.UserService;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 
 @Service
@@ -18,11 +22,13 @@ public class ProjectServiceImpl implements ProjectService {
 
     private final ProjectRepository projectRepository;
     private final UserService userService;
+    private final ApplicationEventPublisher publisher;
 
     public ProjectServiceImpl(ProjectRepository projectRepository,
-                              UserService userService) {
+                              UserService userService, ApplicationEventPublisher publisher) {
         this.projectRepository = projectRepository;
         this.userService = userService;
+        this.publisher = publisher;
     }
 
     @Override
@@ -68,6 +74,13 @@ public class ProjectServiceImpl implements ProjectService {
 
         project.getMembers().add(userToAdd);
         projectRepository.save(project);
+
+        List<UUID> members = new ArrayList<>();
+
+        project.getMembers().forEach(m -> members.add(m.getId()));
+
+        publisher.publishEvent(new ProjectMemberAddedEvent(project.getName(), userToAdd.getName(), userToAdd.getEmail(), members));
+
     }
 
     @Override

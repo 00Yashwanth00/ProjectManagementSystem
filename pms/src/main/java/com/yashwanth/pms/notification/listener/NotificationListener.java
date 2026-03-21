@@ -2,6 +2,7 @@ package com.yashwanth.pms.notification.listener;
 
 import com.yashwanth.pms.events.CommentAddedEvent;
 import com.yashwanth.pms.events.IssueAssignedEvent;
+import com.yashwanth.pms.events.ProjectMemberAddedEvent;
 import com.yashwanth.pms.events.TaskAssignedEvent;
 import com.yashwanth.pms.notification.domain.NotificationType;
 import com.yashwanth.pms.notification.service.NotificationService;
@@ -41,6 +42,16 @@ public class NotificationListener {
 
         for(UUID userId : event.getUserIds()) {
             notificationService.notifyUser(userId, NotificationType.COMMENT_ADDED, event.getMessage());
+        }
+    }
+
+    @EventListener
+    public void handleProjectMemberAdded(ProjectMemberAddedEvent event) {
+
+        String message = "New member is added to project %s: %s".formatted(event.getProjectName(), event.getMemberName());
+
+        for(UUID userId : event.getMembers()) {
+            notificationService.notifyUser(userId, NotificationType.PROJECT_MEMBER_ADDED, message);
         }
 
     }
