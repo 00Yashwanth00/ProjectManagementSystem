@@ -2,14 +2,18 @@ package com.yashwanth.pms.comment.service;
 
 import com.yashwanth.pms.comment.domain.Comment;
 import com.yashwanth.pms.comment.repository.CommentRepository;
+import com.yashwanth.pms.events.CommentAddedEvent;
 import com.yashwanth.pms.issue.domain.Issue;
 import com.yashwanth.pms.issue.service.IssueService;
 import com.yashwanth.pms.task.domain.Task;
 import com.yashwanth.pms.task.service.TaskService;
 import com.yashwanth.pms.user.domain.User;
 import com.yashwanth.pms.user.service.UserService;
+import org.springframework.context.ApplicationEvent;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
@@ -20,12 +24,14 @@ public class CommentServiceImpl implements CommentService {
     private final TaskService taskService;
     private final UserService userService;
     private final IssueService issueService;
+    private final ApplicationEventPublisher publisher;
 
-    public CommentServiceImpl(CommentRepository commentRepository, TaskService taskService, UserService userService, IssueService issueService) {
+    public CommentServiceImpl(CommentRepository commentRepository, TaskService taskService, UserService userService, IssueService issueService, ApplicationEventPublisher publisher) {
         this.commentRepository = commentRepository;
         this.taskService = taskService;
         this.userService = userService;
         this.issueService = issueService;
+        this.publisher = publisher;
     }
 
     @Override
@@ -36,7 +42,11 @@ public class CommentServiceImpl implements CommentService {
 
         Comment comment = Comment.forTask(content, author, task);
 
-        return commentRepository.save(comment);
+        Comment savedComment = commentRepository.save(comment);
+
+        publisher.publishEvent(new CommentAddedEvent(List.of(task.getAssignee().getId()), "New comment added to task: " + task.getTitle()));
+
+        return savedComment;
     }
 
     @Override
@@ -46,7 +56,11 @@ public class CommentServiceImpl implements CommentService {
 
         Comment comment = Comment.forIssue(content, author, issue);
 
-        return commentRepository.save(comment);
+        Comment savedComment = commentRepository.save(comment);
+
+        publisher.publishEvent(new CommentAddedEvent(List.of(issue.getAssignee().getId()), "New comment added to issue: " + issue.getTitle()));
+
+        return savedComment;
     }
 
     @Override

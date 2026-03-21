@@ -57,4 +57,8 @@ public class User {
     public boolean isLeader() {
         return role == Role.PROJECT_LEADER;
     }
+
+    public void setId(UUID id) {
+        this.id = id;
+    }
 }

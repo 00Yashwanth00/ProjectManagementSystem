@@ -2,6 +2,7 @@ package com.yashwanth.pms.issue.service;
 
 import com.yashwanth.pms.common.exception.AccessDeniedException;
 import com.yashwanth.pms.common.exception.ResourceNotFoundException;
+import com.yashwanth.pms.events.IssueAssignedEvent;
 import com.yashwanth.pms.issue.domain.Issue;
 import com.yashwanth.pms.issue.domain.IssuePriority;
 import com.yashwanth.pms.issue.domain.IssueStatus;
@@ -14,6 +15,8 @@ import com.yashwanth.pms.task.service.TaskService;
 import com.yashwanth.pms.user.domain.Role;
 import com.yashwanth.pms.user.domain.User;
 import com.yashwanth.pms.user.service.UserService;
+import org.springframework.context.ApplicationEvent;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -26,12 +29,14 @@ public class IssueServiceImpl implements IssueService {
     private final ProjectService projectService;
     private final TaskService taskService;
     private final UserService userService;
+    private final ApplicationEventPublisher publisher;
 
-    public IssueServiceImpl(IssueRepository issueRepository, ProjectService projectService, TaskService taskService, UserService userService) {
+    public IssueServiceImpl(IssueRepository issueRepository, ProjectService projectService, TaskService taskService, UserService userService, ApplicationEventPublisher publisher) {
         this.issueRepository = issueRepository;
         this.projectService = projectService;
         this.taskService = taskService;
         this.userService = userService;
+        this.publisher = publisher;
     }
 
     @Override
@@ -60,6 +65,8 @@ public class IssueServiceImpl implements IssueService {
 
         issue.assignTo(assignee);
         issueRepository.save(issue);
+
+        publisher.publishEvent(new IssueAssignedEvent(assigneeId, issueId, issue.getProject().getId(), issue.getTitle()));
     }
 
     @Override

@@ -2,15 +2,19 @@ package com.yashwanth.pms.task.service;
 
 import com.yashwanth.pms.common.exception.AccessDeniedException;
 import com.yashwanth.pms.common.exception.ResourceNotFoundException;
+import com.yashwanth.pms.events.TaskAssignedEvent;
 import com.yashwanth.pms.project.domain.Project;
 import com.yashwanth.pms.project.repository.ProjectRepository;
 import com.yashwanth.pms.project.service.ProjectService;
 import com.yashwanth.pms.task.domain.Task;
 import com.yashwanth.pms.task.domain.TaskPriority;
+import com.yashwanth.pms.task.domain.TaskStatus;
 import com.yashwanth.pms.task.repository.TaskRepository;
 import com.yashwanth.pms.user.domain.Role;
 import com.yashwanth.pms.user.domain.User;
 import com.yashwanth.pms.user.service.UserService;
+import org.springframework.context.ApplicationEvent;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -22,11 +26,13 @@ public class TaskServiceImpl implements TaskService {
     private final TaskRepository taskRepository;
     private final ProjectService projectService;
     private final UserService userService;
+    private final ApplicationEventPublisher publisher;
 
-    public TaskServiceImpl(TaskRepository taskRepository, ProjectService projectService, UserService userService) {
+    public TaskServiceImpl(TaskRepository taskRepository, ProjectService projectService, UserService userService, ApplicationEventPublisher publisher) {
         this.taskRepository = taskRepository;
         this.projectService = projectService;
         this.userService = userService;
+        this.publisher = publisher;
     }
 
     @Override
@@ -60,6 +66,10 @@ public class TaskServiceImpl implements TaskService {
 
         task.assignTo(assignee);
         taskRepository.save(task);
+
+        publisher.publishEvent(
+                new TaskAssignedEvent(taskId, assigneeId, task.getTitle())
+        );
     }
 
     @Override
@@ -69,4 +79,31 @@ public class TaskServiceImpl implements TaskService {
 
         return taskRepository.findByProject(project);
     }
+
+    @Override
+    public void changeTaskStatus(UUID taskId, String newStatus, UUID currentUserId) {
+        Task task = taskRepository.findById(taskId).orElseThrow(() -> new ResourceNotFoundException("No task found"));
+
+        User user = userService.getById(currentUserId);
+
+        if (user.getRole() == Role.TEAM_MEMBER &&
+                (task.getAssignee() == null ||
+                        !task.getAssignee().getId().equals(currentUserId))) {
+
+            throw new AccessDeniedException(
+                    "You are not allowed to change this task status");
+        }
+
+        TaskStatus targetStatus = TaskStatus.valueOf(newStatus);
+        task.changeStatus(targetStatus);
+
+        taskRepository.save(task);
+    }
+
+    @Override
+    public Task getById(UUID taskId) {
+        return taskRepository.findById(taskId).orElseThrow(() -> new ResourceNotFoundException("Task does not exist."));
+    }
+
+
 }

@@ -98,4 +98,12 @@ public class Task {
     public void assignTo(User assignee) {
         this.assignee = assignee;
     }
+
+    public void changeStatus(TaskStatus newStatus) {
+        if(!this.status.canTransitionTo(newStatus)) {
+            throw new IllegalStateException("Cannot change status from " + this.status + " to " + newStatus);
+        }
+
+        this.status = newStatus;
+    }
 }

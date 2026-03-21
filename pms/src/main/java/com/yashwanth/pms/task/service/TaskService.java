@@ -13,4 +13,8 @@ public interface TaskService {
 
     List<Task> getTasksByProject(UUID projectId);
 
+    void changeTaskStatus(UUID taskId, String newStatus, UUID currentUserId);
+
+    Task getById(UUID taskId);
+
 }

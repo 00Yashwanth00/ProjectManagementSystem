@@ -9,9 +9,11 @@ import com.yashwanth.pms.project.repository.ProjectRepository;
 import com.yashwanth.pms.user.domain.Role;
 import com.yashwanth.pms.user.domain.User;
 import com.yashwanth.pms.user.service.UserService;
+import org.springframework.stereotype.Service;
 
 import java.util.UUID;
 
+@Service
 public class ProjectServiceImpl implements ProjectService {
 
     private final ProjectRepository projectRepository;
@@ -24,9 +26,11 @@ public class ProjectServiceImpl implements ProjectService {
     }
 
     @Override
-    public Project createProject(String name, UUID leaderId, User currentUser) {
+    public Project createProject(String name, UUID leaderId, UUID currentUserId) {
 
-        if (currentUser.getRole() != Role.ADMIN) {
+        User admin = userService.getById(currentUserId);
+
+        if (admin.getRole() != Role.ADMIN) {
             throw new AccessDeniedException("Only admin can create projects");
         }
 
@@ -42,7 +46,8 @@ public class ProjectServiceImpl implements ProjectService {
 
 
     @Override
-    public void addMember(UUID projectId, UUID userId, User currentUser) {
+    public void addMember(UUID projectId, UUID userId, UUID currentUserId) {
+
 
         Project project = projectRepository.findById(projectId)
                 .orElseThrow(() -> new ResourceNotFoundException("Project not found"));
@@ -50,6 +55,8 @@ public class ProjectServiceImpl implements ProjectService {
         if(project.getStatus() != ProjectStatus.ACTIVE) {
             throw new BusinessException("Project is not active");
         }
+
+        User currentUser = userService.getById(currentUserId);
 
         authorize(project, currentUser);
 
@@ -64,7 +71,7 @@ public class ProjectServiceImpl implements ProjectService {
     }
 
     @Override
-    public void removeMember(UUID projectId, UUID userId, User currentUser) {
+    public void removeMember(UUID projectId, UUID userId, UUID currentUserId) {
 
         Project project = projectRepository.findById(projectId)
                 .orElseThrow(() -> new ResourceNotFoundException("Project not found"));
@@ -72,6 +79,8 @@ public class ProjectServiceImpl implements ProjectService {
         if(project.getStatus() != ProjectStatus.ACTIVE) {
             throw new BusinessException("Project is not active");
         }
+
+        User currentUser = userService.getById(currentUserId);
 
         authorize(project, currentUser);
 
@@ -85,10 +94,18 @@ public class ProjectServiceImpl implements ProjectService {
         projectRepository.save(project);
     }
 
+    @Override
+    public Project getById(UUID projectId) {
+        Project project = projectRepository.findById(projectId).orElseThrow(() -> new ResourceNotFoundException("Project not found"));
+
+        return project;
+    }
+
     private void authorize(Project project, User currentUser) {
         if (currentUser.getRole() != Role.ADMIN &&
                 !currentUser.equals(project.getLeader())) {
             throw new AccessDeniedException("Not authorized");
         }
     }
+
 }

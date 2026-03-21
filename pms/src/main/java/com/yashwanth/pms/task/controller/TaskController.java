@@ -1,6 +1,7 @@
 package com.yashwanth.pms.task.controller;
 
 import com.yashwanth.pms.security.UserPrincipal;
+import com.yashwanth.pms.task.dto.ChangeTaskStatusRequest;
 import com.yashwanth.pms.task.dto.CreateTaskRequest;
 import com.yashwanth.pms.task.dto.TaskResponse;
 import com.yashwanth.pms.task.service.TaskService;
@@ -72,5 +73,13 @@ public class TaskController {
                 .map(TaskResponse::from)
                 .toList();
     }
+
+    @PatchMapping("/{taskId}/status")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void changeTaskStatus(@PathVariable UUID taskId, @Valid @RequestBody ChangeTaskStatusRequest request, Authentication authentication) {
+        UserPrincipal principal = (UserPrincipal) authentication.getPrincipal();
+
+        taskService.changeTaskStatus(taskId, request.getStatus(), principal.getId());
+     }
 }
 
