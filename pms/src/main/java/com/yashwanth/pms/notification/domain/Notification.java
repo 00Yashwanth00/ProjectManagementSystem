@@ -22,6 +22,7 @@ public class Notification {
     @Enumerated(EnumType.STRING)
     private NotificationType type;
 
+    @Column(name = "read_flag")
     private boolean read;
 
     private LocalDateTime createdAt;
