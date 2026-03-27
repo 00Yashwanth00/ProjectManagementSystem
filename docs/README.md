@@ -1,353 +1,419 @@
-📘 Project Documentation
-Project Management System (JIRA Subset)
-1. Introduction
+# 📘 Project Documentation
 
-The Project Management System (PMS) is a full-stack software application designed to manage projects, tasks, issues (bugs), and team collaboration.
-It is inspired by industry tools such as JIRA, but intentionally scoped to demonstrate Object Oriented Design & Analysis (OOAD) concepts.
+## Project Management System (JIRA Subset)
 
-The system is built using:
+---
 
-Java + Spring Boot (Backend)
+# 1. Introduction
 
-MySQL (Database)
+The **Project Management System (PMS)** is a backend application designed to manage projects, tasks, issues (bugs), and team collaboration.
 
-JWT-based Authentication
+It is inspired by industry tools like **JIRA**, but intentionally scoped to demonstrate strong **Object-Oriented Design & Analysis (OOAD)** principles and clean backend architecture.
 
-Test-Driven Development (TDD) approach
+The system emphasizes:
 
-The project strictly follows:
+* Clean architecture
+* SOLID principles
+* Scalable design
+* Real-world backend patterns
 
-OOP principles
+---
 
-SOLID principles
-
-Layered architecture
-
-Clean code practices
-
-2. Objectives
+# 2. Objectives
 
 The primary objectives of this project are:
 
-To design a real-world OOAD-based system
+* Design a real-world OOAD-based backend system
+* Apply SOLID principles in practice
+* Implement secure authentication & authorization
+* Demonstrate unit and controller testing (TDD)
+* Build an extensible and maintainable architecture
 
-To apply SOLID principles in practice
+---
 
-To implement secure authentication & authorization
+# 3. Technology Stack
 
-To demonstrate unit testing and controller testing
+### Backend
 
-To build a scalable and extensible backend architecture
+* Java 17+
+* Spring Boot
+* Spring Security
+* Spring Data JPA
+* Hibernate
 
-3. Technology Stack
-Backend
+### Database
 
-Java 17+
+* MySQL
 
-Spring Boot
+### Security
 
-Spring Security
+* JWT (JSON Web Token)
+* Role-based authorization
 
-Spring Data JPA
+### Testing
 
-Hibernate
+* JUnit 5
+* Mockito
+* MockMvc
 
-Database
+### Tools
 
-MySQL
+* Maven
+* Git & GitHub
+* Postman
 
-Security
+---
 
-JWT (JSON Web Token)
+# 4. High-Level Architecture
 
-Role-based authorization
+The system follows a **Layered Architecture**:
 
-Testing
+```
+Controller → Service → Repository → Database
+```
 
-JUnit 5
+### Responsibilities
 
-Mockito
+| Layer      | Responsibility                  |
+| ---------- | ------------------------------- |
+| Controller | HTTP handling, request/response |
+| Service    | Business logic & rules          |
+| Repository | Database interaction            |
+| Domain     | Core entities & behavior        |
 
-MockMvc
+---
 
-Tools
+# 5. Authentication & Authorization
 
-Maven
+### Authentication
 
-Git & GitHub
+* Implemented using JWT
+* Users login with email & password
+* Token generated on successful authentication
 
-Postman (API testing)
+### Authorization
 
-4. High-Level Architecture
+* Role-based access control
+* Enforced at **service layer**
 
-The application follows a Layered Architecture:
+### Roles
 
-Controller Layer  →  Service Layer  →  Repository Layer  →  Database
+* ADMIN
+* PROJECT_LEADER
+* TEAM_MEMBER
 
-Responsibilities:
+---
 
-Controller Layer: HTTP handling, request/response mapping
+# 6. User Management Module
 
-Service Layer: Business logic & domain rules
+### Features
 
-Repository Layer: Database interaction
+* User registration
+* Login authentication
+* Role assignment
+* Fetch user details
 
-Domain Layer: Core entities & business behavior
+### Design Notes
 
-5. Authentication & Authorization
-Authentication
+* User is the core identity
+* Passwords are encrypted
+* Roles implemented via enums
 
-Implemented using JWT
+---
 
-Users authenticate using email & password
+# 7. Project Management Module
 
-On successful login, a JWT token is generated
+### Features
 
-Authorization
+* Create project (ADMIN)
+* Assign project leader
+* Add/remove members
+* Track project lifecycle
 
-Role-based access control is enforced using Spring Security.
+### Business Rules
 
-Roles:
+* Only ADMIN can create projects
+* Leader must have PROJECT_LEADER role
+* Leader cannot be removed
+* Only ADMIN/LEADER manage members
 
-ADMIN
+---
 
-PROJECT_LEADER
+# 8. Task Management Module
 
-TEAM_MEMBER
+### Features
 
-Authorization rules are enforced at the service layer, not the controller, ensuring proper domain protection.
+* Create tasks under project
+* Assign tasks
+* Change task status
 
-6. User Management Module
-Features Implemented
+### Lifecycle
 
-User registration
-
-User authentication (login)
-
-Role assignment
-
-Fetch user by ID (used internally)
-
-Design Notes
-
-User entity is the core identity of the system
-
-Roles are implemented using enums
-
-Passwords are stored in encrypted form
-
-7. Project Management Module
-Features Implemented
-
-Admin can create a project
-
-Admin assigns a project leader
-
-Project has a lifecycle status
-
-Project members can be added/removed
-
-Business Rules
-
-Only ADMIN can create projects
-
-Project leader must have PROJECT_LEADER role
-
-Project leader cannot be removed from their own project
-
-Only Admin or Project Leader can manage members
-
-OOAD Concepts Used
-
-Encapsulation of project rules in ProjectService
-
-Use of enums for ProjectStatus
-
-Clear separation of responsibilities
-
-8. Task Management Module
-Features Implemented
-
-Create tasks under a project
-
-Assign tasks to users
-
-Change task status
-
-Task status transitions enforced
-
-Task Status Lifecycle
+```
 TODO → IN_PROGRESS → DONE
+```
 
-Business Rules
+### Business Rules
 
-Only Admin or Project Leader can assign tasks
+* Only ADMIN / LEADER can assign
+* Only assignee can update status
+* Invalid transitions blocked
 
-Team members can update status only if assigned
+---
 
-Invalid state transitions are blocked
+# 9. Issue / Bug Tracking Module
 
-Key Design Aspect
+### Features
 
-Status transition logic is encapsulated inside the Task entity
+* Create issues
+* Assign issues
+* Update issue status
+* Fetch issues per project
 
-9. Issue / Bug Tracking Module
-Features Implemented
+### Lifecycle
 
-Report an issue or bug
-
-Assign issue to a user
-
-Change issue status
-
-Fetch issues per project
-
-Issue Status Lifecycle
+```
 OPEN → IN_PROGRESS → RESOLVED → CLOSED
+```
 
-Business Rules
+### Business Rules
 
-Any authenticated user can report an issue
+* Any authenticated user can report issue
+* Only ADMIN / LEADER assign issues
+* Only assignee updates status
 
-Only Admin / Project Leader can assign issues
+---
 
-Team members can update status only if they are assignees
+# 10. Comments / Discussion Module
 
-Invalid lifecycle jumps are prevented
+### Purpose
 
-OOAD Highlights
+Enable collaboration via contextual discussions.
 
-Issue lifecycle logic handled within the domain entity
+### Features
 
-Role checks handled in service layer
+* Add comment to task
+* Add comment to issue
+* Fetch comments
 
-10. Comments / Discussion Module
-Purpose
+### Design Decisions
 
-The Comments module enables contextual collaboration by allowing users to discuss tasks and issues.
+* Comment belongs to either Task or Issue
+* Immutable after creation
+* Factory methods ensure valid creation
 
-Features Implemented
+---
 
-Add comment to a task
+# 11. 🔔 Notification Module 
 
-Add comment to an issue
+## Overview
 
-Fetch comments for a task
+The Notification module provides **real-time system feedback** to users when important actions occur.
 
-Fetch comments for an issue
+It is implemented using an **Event-Driven Architecture** to ensure:
 
-Design Decisions
+* Loose coupling
+* High extensibility
+* Clean separation of concerns
 
-Comments are dependent entities
+---
 
-A comment belongs to either:
+## Supported Notification Types
 
-A Task, or
+```java
+TASK_ASSIGNED
+ISSUE_ASSIGNED
+COMMENT_ADDED
+TASK_STATUS_CHANGED
+ISSUE_STATUS_CHANGED
+PROJECT_MEMBER_ADDED
+```
 
-An Issue
+---
 
-Factory methods ensure valid comment creation
+## Design Approach
 
-Comments are immutable after creation
+The system uses **Spring Application Events**:
 
-Benefits
+```
+Service → Event → Listener → NotificationService → DB
+```
 
-Improves traceability
+### Key Components
 
-Provides discussion history
+| Component           | Responsibility        |
+| ------------------- | --------------------- |
+| Event               | Carries data          |
+| Publisher           | Emits event           |
+| Listener            | Handles event         |
+| NotificationService | Persists notification |
 
-Enhances collaboration
+---
 
-11. Validation & Error Handling
-Validation
+## Event Flow Example
 
-Implemented using jakarta.validation
+### Task Assignment
 
-Request DTOs validated using annotations like @NotBlank
+```
+TaskService.assignTask()
+    ↓
+publish TaskAssignedEvent
+    ↓
+NotificationListener
+    ↓
+NotificationService.notifyUser()
+    ↓
+Database
+```
 
-Global Exception Handling
+---
 
-Centralized exception handling using @ControllerAdvice
+## Event Classes
 
-Consistent error responses
+Examples:
 
-Common exceptions handled:
+* TaskAssignedEvent
+* IssueAssignedEvent
+* CommentAddedEvent
+* ProjectMemberAddedEvent
 
-Resource not found
+### Design Rule
 
-Validation errors
+Events contain only:
 
-Access denied
+* IDs
+* Strings
+* primitive data
 
-Internal server errors
+❌ No entities
+✔ Lightweight DTOs
 
-12. Testing Strategy
+---
 
-The project follows Test-Driven Development (TDD).
+## Notification Entity
 
-Unit Tests
+```java
+Notification {
+    UUID id;
+    UUID userId;
+    String message;
+    NotificationType type;
+    boolean read;
+    LocalDateTime createdAt;
+}
+```
 
-Service layer tested using JUnit + Mockito
+---
 
-All business rules covered
+## Notification Strategy
 
-Edge cases validated
+| Event                | Receiver            |
+| -------------------- | ------------------- |
+| Task Assigned        | Assignee            |
+| Issue Assigned       | Assignee            |
+| Comment Added        | Assignee / Reporter |
+| Task Status Changed  | Assignee            |
+| Issue Status Changed | Assignee + Reporter |
+| Member Added         | New Member          |
 
-Controller Tests
+---
 
-Implemented using MockMvc
+## API Endpoints
 
-Service layer mocked
+```
+GET /notifications
+PATCH /notifications/{id}/read
+```
 
-Security filters disabled
+---
 
-HTTP contract tested independently
+## Key Design Decisions
 
-Benefits
+* One notification per user (simple & scalable)
+* Event-driven decoupling
+* Service layer triggers events
+* Listener handles side effects
 
-High confidence in correctness
+---
 
-Easy refactoring
+## Benefits
 
-Industry-standard practice
+* Loose coupling between modules
+* Easy to extend (Email, WebSocket, etc.)
+* Follows Open/Closed principle
+* Industry-level design pattern
 
-13. SOLID Principles Applied
-Principle	Application
-Single Responsibility	Separate layers & services
-Open/Closed	New features added without modifying core logic
-Liskov Substitution	Role-based polymorphism
-Interface Segregation	Clean service interfaces
-Dependency Inversion	Services depend on abstractions
-14. Extensibility & Future Scope
+---
 
-The system is designed to be easily extensible.
+# 12. Validation & Error Handling
 
-Possible Enhancements
+### Validation
 
-Notifications module
+* Implemented using `jakarta.validation`
 
-Comment editing & deletion
+### Exception Handling
 
-File attachments
+* Global handling using `@ControllerAdvice`
+* Standard error response format
 
-Search & filters
+---
 
-Frontend integration (React)
+# 13. Testing Strategy
 
-Audit logging
+### Approach
 
-Pagination & performance optimizations
+* Test-Driven Development (TDD)
 
-15. Conclusion
+### Unit Tests
 
-This Project Management System successfully demonstrates:
+* Service layer tested with Mockito
 
-Real-world OOAD application
+### Controller Tests
 
-Secure backend design
+* MockMvc used
+* Security disabled
+* HTTP contract verified
 
-Proper use of Spring Boot
+### Event Testing
 
-Clean architecture
+* Listener tested using Mockito
+* Event publishing verified in service tests
 
-Professional testing practices
+---
+
+# 14. SOLID Principles Applied
+
+| Principle | Application              |
+| --------- | ------------------------ |
+| SRP       | Layer separation         |
+| OCP       | Event-based extension    |
+| LSP       | Role-based behavior      |
+| ISP       | Clean service interfaces |
+| DIP       | Dependency injection     |
+
+---
+
+# 15. Extensibility & Future Scope
+
+* Real-time notifications (WebSocket)
+* Email notifications
+* Notification preferences
+* File attachments
+* Search & filtering
+* Frontend integration (React)
+* Audit logging
+
+---
+
+# 16. Conclusion
+
+This system demonstrates:
+
+* Real-world backend architecture
+* Event-driven design
+* Secure authentication
+* Clean and scalable codebase
+* Industry-standard testing practices
+
+The addition of the **Notification Module using Event Pattern** elevates the system to a production-grade design level.
+
