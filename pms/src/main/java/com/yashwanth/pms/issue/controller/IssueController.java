@@ -15,7 +15,7 @@ import java.util.Map;
 import java.util.UUID;
 
 @RestController
-@RequestMapping("/api/projects/{projectId}/issues")
+@RequestMapping("/api/projects/{projectId}/{taskId}/issues")
 public class IssueController {
 
     private final IssueService issueService;
@@ -26,13 +26,15 @@ public class IssueController {
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    public IssueResponse createIssue(@PathVariable UUID projectId, @Valid @RequestBody CreateIssueRequest request, Authentication authentication) {
+    public IssueResponse createIssue(@PathVariable UUID projectId, @PathVariable UUID taskId, @Valid @RequestBody CreateIssueRequest request, Authentication authentication) {
 
         UserPrincipal principal = (UserPrincipal) authentication.getPrincipal();
 
+        System.out.println("In issue controller...");
+
         return IssueResponse.from(
                 issueService.createIssue(
-                        projectId, request.getTaskId(), request.getTitle(), request.getDescription(), request.getType(), request.getPriority(), principal.getId())
+                        projectId, taskId, request.getTitle(), request.getDescription(), request.getType(), request.getPriority(), principal.getId())
         );
 
     }

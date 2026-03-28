@@ -16,7 +16,6 @@ public class CreateIssueRequest {
     @NotBlank
     private String priority;
 
-    private UUID taskId;
 
     public String getTitle() {
         return title;
@@ -50,11 +49,5 @@ public class CreateIssueRequest {
         this.priority = priority;
     }
 
-    public UUID getTaskId() {
-        return taskId;
-    }
 
-    public void setTaskId(UUID taskId) {
-        this.taskId = taskId;
-    }
 }
