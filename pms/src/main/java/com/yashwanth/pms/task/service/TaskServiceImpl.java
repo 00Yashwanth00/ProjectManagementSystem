@@ -109,5 +109,10 @@ public class TaskServiceImpl implements TaskService {
         return taskRepository.findById(taskId).orElseThrow(() -> new ResourceNotFoundException("Task does not exist."));
     }
 
+    @Override
+    public List<Task> getTasksByMember(UUID projectId, UUID userId) {
 
+        return taskRepository.findByProjectIdAndAssigneeId(projectId, userId);
+
+    }
 }

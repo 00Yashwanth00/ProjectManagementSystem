@@ -1,5 +1,6 @@
 package com.yashwanth.pms.task.controller;
 
+import com.yashwanth.pms.project.domain.Project;
 import com.yashwanth.pms.security.UserPrincipal;
 import com.yashwanth.pms.task.dto.ChangeTaskStatusRequest;
 import com.yashwanth.pms.task.dto.CreateTaskRequest;
@@ -72,6 +73,17 @@ public class TaskController {
                 .stream()
                 .map(TaskResponse::from)
                 .toList();
+    }
+
+    @GetMapping("/users/{userId}")
+    public List<TaskResponse> getTasksOfMember(@PathVariable UUID projectId, @PathVariable UUID userId, Authentication authentication) {
+
+        UserPrincipal principal = (UserPrincipal) authentication.getPrincipal();
+
+        return taskService.getTasksByMember(projectId, principal.getId()).stream()
+                .map(TaskResponse::from)
+                .toList();
+
     }
 
     @PatchMapping("/{taskId}/status")

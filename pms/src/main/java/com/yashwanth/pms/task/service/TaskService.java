@@ -17,4 +17,6 @@ public interface TaskService {
 
     Task getById(UUID taskId);
 
+    List<Task> getTasksByMember(UUID projectId, UUID userId);
+
 }
