@@ -1,5 +1,6 @@
 package com.yashwanth.pms.project.controller;
 
+import com.yashwanth.pms.common.exception.AccessDeniedException;
 import com.yashwanth.pms.project.domain.Project;
 import com.yashwanth.pms.project.dto.CreateProjectRequest;
 import com.yashwanth.pms.project.dto.ProjectMemberRequest;
@@ -14,6 +15,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
 import java.util.UUID;
 
 @RestController
@@ -24,6 +26,16 @@ public class ProjectController {
 
     public ProjectController(ProjectService projectService) {
         this.projectService = projectService;
+    }
+
+    @GetMapping()
+    @PreAuthorize("hasRole('ADMIN')")
+    public List<ProjectResponse> getAllProjects() {
+
+        return projectService.getAllProjects().stream()
+                .map(ProjectResponse::from)
+                .toList();
+
     }
 
     @PostMapping(
@@ -65,5 +77,21 @@ public class ProjectController {
 
         UserPrincipal principal = (UserPrincipal) authentication.getPrincipal();
         projectService.removeMember(projectId, userId, principal.getId());
+    }
+
+    @PostMapping("/{projectId}")
+    @PreAuthorize("hasAnyRole('ADMIN', 'PROJECT_LEADER')")
+    public ProjectResponse getProject(@PathVariable UUID projectId, Authentication authentication) {
+
+        Project project = projectService.getById(projectId);
+
+        UserPrincipal principal = (UserPrincipal) authentication.getPrincipal();
+
+        if(principal.getRole().equals("PROJECT_LEADER") && !project.getLeader().getId().equals(principal.getId())) {
+            throw new AccessDeniedException("You are not allowed to access this project");
+        }
+
+        return ProjectResponse.from(project);
+
     }
 }

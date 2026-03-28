@@ -15,6 +15,7 @@ import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.UUID;
 
 @Service
@@ -43,8 +44,11 @@ public class ProjectServiceImpl implements ProjectService {
         User leader = userService.getById(leaderId);
 
         if (leader.getRole() != Role.PROJECT_LEADER) {
-            throw new BusinessException("Assigned user is not a project leader");
+            throw new BusinessException("User is already a leader of project");
         }
+
+        leader.setRole(Role.PROJECT_LEADER);
+        userService.save(leader);
 
         Project project = new Project(name, leader);
         return projectRepository.save(project);
@@ -109,9 +113,8 @@ public class ProjectServiceImpl implements ProjectService {
 
     @Override
     public Project getById(UUID projectId) {
-        Project project = projectRepository.findById(projectId).orElseThrow(() -> new ResourceNotFoundException("Project not found"));
 
-        return project;
+        return projectRepository.findById(projectId).orElseThrow(() -> new ResourceNotFoundException("Project not found"));
     }
 
     private void authorize(Project project, User currentUser) {
@@ -121,4 +124,8 @@ public class ProjectServiceImpl implements ProjectService {
         }
     }
 
+    @Override
+    public List<Project> getAllProjects() {
+        return projectRepository.findAll();
+    }
 }
