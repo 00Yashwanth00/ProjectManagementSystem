@@ -1,5 +1,6 @@
 package com.yashwanth.pms.notification.service;
 
+import com.yashwanth.pms.common.exception.AccessDeniedException;
 import com.yashwanth.pms.notification.domain.Notification;
 import com.yashwanth.pms.notification.domain.NotificationType;
 import com.yashwanth.pms.notification.repository.NotificationRepository;
@@ -33,12 +34,14 @@ public class NotificationServiceImpl implements NotificationService {
     }
 
     @Override
-    public void markAsRead(UUID notificationId) {
+    public void markAsRead(UUID notificationId, UUID userId) {
 
         Notification n = repository.findById(notificationId)
                 .orElseThrow();
 
-        n.markAsRead();
+        if(!n.getUserId().equals(userId)) {
+            throw new AccessDeniedException("You are not allowed to mark this as read");
+        }
 
         repository.save(n);
 

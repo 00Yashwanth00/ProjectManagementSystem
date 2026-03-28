@@ -12,7 +12,7 @@ public interface NotificationService {
 
     List<Notification> getUserNotifications(UUID userId);
 
-    void markAsRead(UUID notificationId);
+    void markAsRead(UUID notificationId, UUID userId);
 
     Notification getNotification(UUID notificationId);
 

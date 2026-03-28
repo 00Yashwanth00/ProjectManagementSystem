@@ -36,12 +36,7 @@ public class NotificationController {
         UserPrincipal principal =
                 (UserPrincipal) authentication.getPrincipal();
 
-        Notification n = service.getNotification(id);
-
-        if(n.getUserId() != principal.getId()) {
-            throw new AccessDeniedException("Not allowed to mark this as read");
-        }
-        service.markAsRead(id);
+        service.markAsRead(id, principal.getId());
     }
 
 }
