@@ -6,6 +6,7 @@ import com.yashwanth.pms.user.repository.UserRepository;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 @Service
@@ -30,5 +31,10 @@ public class UserServiceImpl implements UserService {
     @Override
     public List<User> getUsersByRole(Role role) {
         return userRepository.findByRole(role);
+    }
+
+    @Override
+    public void save(User user) {
+        userRepository.save(user);
     }
 }

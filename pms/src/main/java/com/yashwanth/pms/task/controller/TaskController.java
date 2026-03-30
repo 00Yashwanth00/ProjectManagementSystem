@@ -1,6 +1,5 @@
 package com.yashwanth.pms.task.controller;
 
-import com.yashwanth.pms.project.domain.Project;
 import com.yashwanth.pms.security.UserPrincipal;
 import com.yashwanth.pms.task.dto.ChangeTaskStatusRequest;
 import com.yashwanth.pms.task.dto.CreateTaskRequest;

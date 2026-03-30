@@ -45,9 +45,11 @@ public class IssueServiceImpl implements IssueService {
 
         User reporter = userService.getById(reporterId);
         Project project = projectService.getById(projectId);
-        Task task = taskService.getById(taskId);
+        Task task = (taskId != null) ? taskService.getById(taskId) : null;
 
         Issue issue = new Issue(title, description, IssueType.valueOf(type), IssuePriority.valueOf(priority), project, task, reporter);
+
+        System.out.println("Issue created successfully...");
 
         return issueRepository.save(issue);
     }

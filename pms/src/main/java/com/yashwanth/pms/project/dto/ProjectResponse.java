@@ -12,12 +12,14 @@ public class ProjectResponse {
     private String name;
     private UUID leaderId;
     private Set<UUID> memberIds;
+    private String status;
 
     public static ProjectResponse from(Project project) {
         ProjectResponse response = new ProjectResponse();
         response.id = project.getId();
         response.name = project.getName();
         response.leaderId = project.getLeader().getId();
+        response.status = project.getStatus().name();
         response.memberIds = project.getMembers()
                 .stream()
                 .map(u -> u.getId())
@@ -40,5 +42,7 @@ public class ProjectResponse {
     public Set<UUID> getMemberIds() {
         return memberIds;
     }
+
+    public String getStatus(){ return status; }
 
 }

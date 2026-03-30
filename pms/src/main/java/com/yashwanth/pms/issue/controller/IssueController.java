@@ -15,7 +15,7 @@ import java.util.Map;
 import java.util.UUID;
 
 @RestController
-@RequestMapping("/api/projects/{projectId}/{taskId}/issues")
+@RequestMapping("/api/projects/{projectId}/issues")
 public class IssueController {
 
     private final IssueService issueService;
@@ -26,7 +26,8 @@ public class IssueController {
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    public IssueResponse createIssue(@PathVariable UUID projectId, @PathVariable UUID taskId, @Valid @RequestBody CreateIssueRequest request, Authentication authentication) {
+    @PreAuthorize("hasRole('PROJECT_LEADER')")
+    public IssueResponse createIssue(@PathVariable UUID projectId, @Valid @RequestBody CreateIssueRequest request, Authentication authentication) {
 
         UserPrincipal principal = (UserPrincipal) authentication.getPrincipal();
 
@@ -34,7 +35,7 @@ public class IssueController {
 
         return IssueResponse.from(
                 issueService.createIssue(
-                        projectId, taskId, request.getTitle(), request.getDescription(), request.getType(), request.getPriority(), principal.getId())
+                        projectId, request.getTaskId(), request.getTitle(), request.getDescription(), request.getType(), request.getPriority(), principal.getId())
         );
 
     }

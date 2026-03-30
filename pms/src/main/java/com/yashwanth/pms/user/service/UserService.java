@@ -4,6 +4,7 @@ import com.yashwanth.pms.user.domain.Role;
 import com.yashwanth.pms.user.domain.User;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 public interface UserService {
@@ -12,4 +13,7 @@ public interface UserService {
     List<User> getAllUsers();
 
     List<User> getUsersByRole(Role role);
+
+    void save(User user);
+
 }
