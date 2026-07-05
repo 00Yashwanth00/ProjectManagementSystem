@@ -1,4 +1,4 @@
-package com.yashwanth.pms.auth;
+package com.yashwanth.pms.auth.controller;
 
 import com.yashwanth.pms.auth.dto.LoginRequest;
 import com.yashwanth.pms.auth.dto.RegisterRequest;
@@ -6,7 +6,6 @@ import com.yashwanth.pms.auth.service.AuthService;
 import com.yashwanth.pms.security.JwtUtil;
 import com.yashwanth.pms.security.UserPrincipal;
 import jakarta.validation.Valid;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -33,7 +32,6 @@ public class AuthController {
     }
 
     @PostMapping("/register")
-    @PreAuthorize("hasRole('ADMIN')")
     public String register(@RequestBody @Valid RegisterRequest request) {
 
         authService.createUser(request);

@@ -8,3 +8,6 @@ application-local.yml
 *.mdj
 *.txt
 E_RDiagram.html
+/node_modules/
+/frontend/README.md
+
