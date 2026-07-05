@@ -46,7 +46,7 @@ public class CommentController {
 
      @PostMapping("/issues/{issueId}/comments")
      @ResponseStatus(HttpStatus.CREATED)
-     public CommentResponse addCommentIssue(@PathVariable UUID issueId, @Valid AddCommentRequest request, Authentication authentication) {
+     public CommentResponse addCommentIssue(@PathVariable UUID issueId, @Valid @RequestBody AddCommentRequest request, Authentication authentication) {
 
          UserPrincipal principal = (UserPrincipal) authentication.getPrincipal();
 

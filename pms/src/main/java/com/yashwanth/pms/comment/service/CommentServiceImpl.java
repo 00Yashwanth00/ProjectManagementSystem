@@ -58,7 +58,7 @@ public class CommentServiceImpl implements CommentService {
 
         Comment savedComment = commentRepository.save(comment);
 
-        publisher.publishEvent(new CommentAddedEvent(List.of(issue.getAssignee().getId()), "New comment added to issue: " + issue.getTitle()));
+        publisher.publishEvent(new CommentAddedEvent(List.of(issue.getReporter().getId()), "New comment added to issue: " + issue.getTitle()));
 
         return savedComment;
     }

@@ -72,10 +72,11 @@ class NotificationServiceTest {
     void shouldMarkNotificationRead() {
 
         UUID id = UUID.randomUUID();
+        UUID userId = UUID.randomUUID();
 
         Notification n =
                 new Notification(
-                        UUID.randomUUID(),
+                        userId,
                         "msg",
                         NotificationType.TASK_ASSIGNED
                 );
@@ -83,7 +84,7 @@ class NotificationServiceTest {
         when(repository.findById(id))
                 .thenReturn(Optional.of(n));
 
-        service.markAsRead(id);
+        service.markAsRead(id, userId);
 
         verify(repository).save(n);
 
