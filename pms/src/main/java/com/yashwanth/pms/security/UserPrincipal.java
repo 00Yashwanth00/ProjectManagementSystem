@@ -15,12 +15,14 @@ public class UserPrincipal implements UserDetails {
     private final String email;
     private final String password;
     private final String role;
+    private final String name;
 
     public UserPrincipal(User user) {
         this.id = user.getId();
         this.email = user.getEmail();
         this.password = user.getPassword();
         this.role = user.getRole().name();
+        this.name = user.getName();
     }
 
     public UUID getId() {
@@ -33,13 +35,15 @@ public class UserPrincipal implements UserDetails {
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
-        return List.of(new SimpleGrantedAuthority("ROLE_" + role));
+        return List.of(new SimpleGrantedAuthority("ROLE_"+role));
     }
 
     @Override public String getPassword() { return password; }
-    @Override public String getUsername() { return email; }
+    @Override public String getUsername() { return name; }
     @Override public boolean isAccountNonExpired() { return true; }
     @Override public boolean isAccountNonLocked() { return true; }
     @Override public boolean isCredentialsNonExpired() { return true; }
     @Override public boolean isEnabled() { return true; }
+
+    public  String getEmail() {return email; }
 }

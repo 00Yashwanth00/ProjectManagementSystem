@@ -5,6 +5,8 @@ import ProtectedRoute from '../ProtectedRoute/ProtectedRoute';
 import RoleBasedRoute from '../RoleBasedRoute/RoleBasedRoute';
 import MainLayout from '../../components/layout/MainLayout';
 import PageWrapper from '../../components/layout/PageWrapper';
+import AllUsersPage from '../../features/users/pages/AllUsersPage';
+import UserProfilePage from '../../features/users/pages/UserProfilePage';
 
 // Import actual pages
 import LoginPage from '../../features/auth/pages/LoginPage';
@@ -104,33 +106,6 @@ const IssueDetailsPage = () => (
   >
     <div className="card">
       <p>Issue details will appear here</p>
-    </div>
-  </PageWrapper>
-);
-
-const UserProfilePage = () => (
-  <PageWrapper 
-    title="User Profile" 
-    subtitle="View and edit your profile"
-  >
-    <div className="card">
-      <p>User profile will appear here</p>
-    </div>
-  </PageWrapper>
-);
-
-const AllUsersPage = () => (
-  <PageWrapper 
-    title="All Users" 
-    subtitle="Manage system users (Admin only)"
-    actions={
-      <>
-        <button className="btn btn-primary">+ Add User</button>
-      </>
-    }
-  >
-    <div className="card">
-      <p>User list will appear here</p>
     </div>
   </PageWrapper>
 );

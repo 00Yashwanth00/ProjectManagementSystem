@@ -2,16 +2,15 @@ package com.yashwanth.pms.user.controller;
 
 import com.yashwanth.pms.security.UserPrincipal;
 import com.yashwanth.pms.user.domain.Role;
+import com.yashwanth.pms.user.domain.User;
 import com.yashwanth.pms.user.dto.UserResponse;
 import com.yashwanth.pms.user.service.UserService;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 @RestController
@@ -51,6 +50,12 @@ public class UserController {
         return UserResponse.from(
                 userService.getById(principal.getId())
         );
+    }
+
+    @GetMapping("/{id}")
+    @PreAuthorize("hasAnyRole('ADMIN', 'PROJECT_LEADER')")
+    public UserResponse getUserById(@PathVariable UUID id) {
+        return UserResponse.from(userService.getById(id));
     }
 
 }

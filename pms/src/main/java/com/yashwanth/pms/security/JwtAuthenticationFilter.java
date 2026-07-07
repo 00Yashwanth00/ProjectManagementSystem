@@ -1,6 +1,5 @@
 package com.yashwanth.pms.security;
 
-import ch.qos.logback.core.net.server.ServerListener;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -38,6 +37,11 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             UsernamePasswordAuthenticationToken auth = new UsernamePasswordAuthenticationToken(user, null, user.getAuthorities());
 
             SecurityContextHolder.getContext().setAuthentication(auth);
+
+            SecurityContextHolder.getContext().setAuthentication(auth);
+
+            System.out.println("DEBUG - Authenticated as: " + user.getUsername());
+            System.out.println("DEBUG - Authorities: " + user.getAuthorities());
         }
 
         filterChain.doFilter(request, response);

@@ -10,6 +10,7 @@ const TOKEN_KEY = 'jwtToken';
  */
 export const saveToken = (token) => {
   localStorage.setItem(TOKEN_KEY, token);
+  console.log('Token saved to localStorage:', token);
 };
 
 /**

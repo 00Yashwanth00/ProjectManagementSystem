@@ -35,6 +35,7 @@ const LoginPage = () => {
     setIsSubmitting(true);
     
     const result = await login(email, password);
+    console.log('Login result:', result);
     
     setIsSubmitting(false);
     
