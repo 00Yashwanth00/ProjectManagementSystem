@@ -1,10 +1,23 @@
 import React from 'react';
-import { NavLink } from 'react-router-dom';
+import { NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext/AuthContext';
 
 const Sidebar = () => {
   const { user } = useAuth();
+  const navigate = useNavigate();
 
+  // ✅ Navigate to profile page
+  const handleProfileClick = () => {
+    navigate('/profile');
+  };
+
+  // ✅ Role display mapping
+  const getRoleDisplay = (role) => {
+    if (role === 'ADMIN') return 'Admin';
+    return 'Employee';
+  };
+
+  // ✅ Base nav items for all authenticated users
   const navItems = [
     { to: '/', label: 'Dashboard', icon: '📊' },
     { to: '/projects', label: 'Projects', icon: '📁' },
@@ -13,7 +26,7 @@ const Sidebar = () => {
     { to: '/notifications', label: 'Notifications', icon: '🔔' },
   ];
 
-  // Admin-only items
+  // ✅ Admin-only items
   if (user?.role === 'ADMIN') {
     navItems.push({ to: '/users', label: 'Users', icon: '👥' });
   }
@@ -58,16 +71,23 @@ const Sidebar = () => {
         ))}
       </nav>
 
-      {/* User Profile Section at bottom */}
-      <div style={{
-        position: 'absolute',
-        bottom: 0,
-        left: 0,
-        right: 0,
-        padding: 'var(--spacing-4)',
-        borderTop: 'var(--border-width) solid var(--border-color)',
-        margin: '0',
-      }}>
+      {/* ✅ Clickable User Profile Section at bottom */}
+      <div 
+        onClick={handleProfileClick}
+        style={{
+          position: 'absolute',
+          bottom: 0,
+          left: 0,
+          right: 0,
+          padding: 'var(--spacing-4)',
+          borderTop: 'var(--border-width) solid var(--border-color)',
+          margin: '0',
+          cursor: 'pointer',
+          transition: 'background var(--transition-fast)',
+        }}
+        onMouseEnter={(e) => e.currentTarget.style.background = 'var(--color-gray-50)'}
+        onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
+      >
         <div style={{
           display: 'flex',
           alignItems: 'center',
@@ -77,7 +97,7 @@ const Sidebar = () => {
             width: '40px',
             height: '40px',
             borderRadius: 'var(--border-radius-full)',
-            backgroundColor: 'var(--color-primary)',
+            backgroundColor: user?.role === 'ADMIN' ? 'var(--color-danger)' : 'var(--color-primary)',
             color: 'var(--color-white)',
             display: 'flex',
             alignItems: 'center',
@@ -105,9 +125,16 @@ const Sidebar = () => {
               overflow: 'hidden',
               textOverflow: 'ellipsis',
             }}>
-              {user?.role || 'Role'}
+              {getRoleDisplay(user?.role)}
             </div>
           </div>
+          {/* Profile indicator */}
+          <span style={{
+            fontSize: 'var(--font-size-xs)',
+            color: 'var(--color-gray-400)',
+          }}>
+            👤
+          </span>
         </div>
       </div>
     </aside>

@@ -3,6 +3,7 @@ package com.yashwanth.pms.auth.service;
 import com.yashwanth.pms.auth.dto.RegisterRequest;
 import com.yashwanth.pms.auth.repository.AuthRepository;
 import com.yashwanth.pms.common.exception.BusinessException;
+import com.yashwanth.pms.common.exception.DuplicateUserException;
 import com.yashwanth.pms.user.domain.Role;
 import com.yashwanth.pms.user.domain.User;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -23,16 +24,21 @@ public class AuthServiceImpl implements AuthService {
         this.repository = repository;
     }
 
+
     @Override
-    public void createUser(RegisterRequest request) {
+    public void createUserByAdmin(String name, String email, String password) {
+        Optional<User> dup = repository.findByEmail(email);
 
-        Optional<User> dup = repository.findByEmail(request.getEmail());
-
-        if(dup.isPresent()) {
-            throw new BusinessException("User already exists");
+        if (dup.isPresent()) {
+            throw new DuplicateUserException("User already exists with email: " + email);
         }
 
-        User user = new User(request.getName(), request.getEmail(), encoder.encode(request.getPassword()), Role.valueOf(request.getRole()));
+        User user = new User(
+                name,
+                email,
+                encoder.encode(password),
+                Role.EMPLOYEE
+        );
 
         repository.save(user);
     }

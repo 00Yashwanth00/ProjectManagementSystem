@@ -6,14 +6,13 @@ import com.yashwanth.pms.auth.service.AuthService;
 import com.yashwanth.pms.security.JwtUtil;
 import com.yashwanth.pms.security.UserPrincipal;
 import jakarta.validation.Valid;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
-
+import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
 
@@ -31,16 +30,9 @@ public class AuthController {
         this.authService = authService;
     }
 
-    @PostMapping("/register")
-    public String register(@RequestBody @Valid RegisterRequest request) {
-
-        authService.createUser(request);
-        return "Registered user successfully";
-    }
 
     @PostMapping("/login")
     public Map<String, String> login(@RequestBody @Valid LoginRequest request) {
-
         Authentication authentication = authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(
                         request.getEmail(),
@@ -48,12 +40,24 @@ public class AuthController {
                 )
         );
 
-        UserPrincipal principal =
-                (UserPrincipal) authentication.getPrincipal();
-
+        UserPrincipal principal = (UserPrincipal) authentication.getPrincipal();
         String token = jwtUtil.generateToken(principal);
         return Map.of("token", token);
     }
 
-
+    // ✅ NEW: ADMIN-only endpoint to create new EMPLOYEE users
+    @PostMapping("/register")
+    @PreAuthorize("hasRole('ADMIN')")
+    @ResponseStatus(HttpStatus.CREATED)
+    public ResponseEntity<Map<String, String>> register(
+            @RequestBody @Valid RegisterRequest request
+    ) {
+        authService.createUserByAdmin(
+                request.getName(),
+                request.getEmail(),
+                request.getPassword()
+        );
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(Map.of("message", "User created successfully with EMPLOYEE role"));
+    }
 }

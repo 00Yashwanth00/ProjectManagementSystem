@@ -10,18 +10,13 @@ import {
 } from '../../services/tokenService/tokenService';
 import { login as loginApi, register as registerApi } from '../../api/authApi/authApi';
 
-// Create Auth Context
 const AuthContext = createContext();
 
-/**
- * Auth Provider Component
- */
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // Load user from token on mount
   useEffect(() => {
     const loadUserFromToken = () => {
       if (isAuthenticated()) {
@@ -43,11 +38,6 @@ export const AuthProvider = ({ children }) => {
     loadUserFromToken();
   }, []);
 
-  /**
-   * Login user
-   * @param {string} email - User email
-   * @param {string} password - User password
-   */
   const login = async (email, password) => {
     try {
       setError(null);
@@ -56,10 +46,8 @@ export const AuthProvider = ({ children }) => {
       const response = await loginApi(email, password);
       const { token } = response.data;
       
-      // Save token
       saveToken(token);
       
-      // Extract user info from token
       const userId = getUserIdFromToken();
       const role = getUserRoleFromToken();
       const name = getUserNameFromToken();
@@ -83,16 +71,15 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  /**
-   * Register user
-   * @param {Object} userData - User registration data
-   */
+  // ✅ Register - ADMIN only
   const register = async (userData) => {
     try {
       setError(null);
       setLoading(true);
       
-      await registerApi(userData);
+      // ✅ Remove role from userData if present (backend assigns EMPLOYEE)
+      const { role, ...cleanUserData } = userData;
+      await registerApi(cleanUserData);
       
       setLoading(false);
       return { success: true };
@@ -104,20 +91,12 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  /**
-   * Logout user
-   */
   const logout = () => {
     removeToken();
     setUser(null);
     setError(null);
   };
 
-  /**
-   * Check if user has a specific role
-   * @param {string|string[]} roles - Role or array of roles to check
-   * @returns {boolean} - True if user has any of the specified roles
-   */
   const hasRole = (roles) => {
     if (!user) return false;
     if (Array.isArray(roles)) {
@@ -126,25 +105,12 @@ export const AuthProvider = ({ children }) => {
     return user.role === roles;
   };
 
-  /**
-   * Check if user is ADMIN
-   */
   const isAdmin = () => {
     return user?.role === 'ADMIN';
   };
 
-  /**
-   * Check if user is PROJECT_LEADER
-   */
-  const isProjectLeader = () => {
-    return user?.role === 'PROJECT_LEADER';
-  };
-
-  /**
-   * Check if user is TEAM_MEMBER
-   */
-  const isTeamMember = () => {
-    return user?.role === 'TEAM_MEMBER';
+  const isEmployee = () => {
+    return user?.role === 'EMPLOYEE';
   };
 
   const value = {
@@ -157,8 +123,7 @@ export const AuthProvider = ({ children }) => {
     isAuthenticated: !!user,
     hasRole,
     isAdmin,
-    isProjectLeader,
-    isTeamMember,
+    isEmployee
   };
 
   return (
@@ -168,9 +133,6 @@ export const AuthProvider = ({ children }) => {
   );
 };
 
-/**
- * Custom hook to use Auth Context
- */
 export const useAuth = () => {
   const context = useContext(AuthContext);
   if (!context) {

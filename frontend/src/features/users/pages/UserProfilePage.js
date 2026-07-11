@@ -1,8 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import PageWrapper from '../../../components/layout/PageWrapper';
-import UserCard from '../components/UserCard';
-import { getUserById } from '../../../api/userApi/userApi';
+import { getUserById, getCurrentUser } from '../../../api/userApi/userApi';
 import { useAuth } from '../../../context/AuthContext/AuthContext';
 
 const UserProfilePage = () => {
@@ -13,7 +12,7 @@ const UserProfilePage = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // If no userId provided, use current user
+  // ✅ If no userId provided, use current user
   const targetUserId = userId || currentUser?.id;
 
   useEffect(() => {
@@ -29,7 +28,15 @@ const UserProfilePage = () => {
     try {
       setLoading(true);
       setError(null);
-      const response = await getUserById(id);
+      
+      // ✅ If viewing own profile, use /me endpoint
+      let response;
+      if (id === currentUser?.id) {
+        response = await getCurrentUser();
+      } else {
+        response = await getUserById(id);
+      }
+      
       setUser(response.data);
     } catch (err) {
       console.error('Failed to fetch user:', err);
@@ -45,8 +52,29 @@ const UserProfilePage = () => {
     }
   };
 
-  // Check if viewing own profile
+  // ✅ Check if viewing own profile
   const isOwnProfile = currentUser?.id === user?.id;
+
+  // ✅ Get role display
+  const getRoleDisplay = (role) => {
+    const roleMap = {
+      'ADMIN': 'Admin',
+      'EMPLOYEE': 'Employee'
+    };
+    return roleMap[role] || role;
+  };
+
+  // ✅ Get role color
+  const getRoleColor = (role) => {
+    switch (role) {
+      case 'ADMIN':
+        return 'var(--color-danger)';
+      case 'EMPLOYEE':
+        return 'var(--color-gray-500)';
+      default:
+        return 'var(--color-gray-500)';
+    }
+  };
 
   return (
     <PageWrapper
@@ -55,16 +83,19 @@ const UserProfilePage = () => {
       actions={
         <>
           {isOwnProfile && (
-            <button className="btn btn-primary">
-              ✏️ Edit Profile
+            <button 
+              className="btn btn-secondary"
+              onClick={handleRefresh}
+              disabled={loading}
+            >
+              {loading ? 'Loading...' : '🔄 Refresh'}
             </button>
           )}
           <button
             className="btn btn-secondary"
-            onClick={handleRefresh}
-            disabled={loading}
+            onClick={() => navigate('/')}
           >
-            {loading ? 'Loading...' : '🔄 Refresh'}
+            ← Back to Dashboard
           </button>
         </>
       }
@@ -99,9 +130,65 @@ const UserProfilePage = () => {
       {/* User Profile */}
       {!loading && !error && user && (
         <div>
-          <UserCard user={user} />
+          {/* Profile Card */}
+          <div className="card" style={{ marginBottom: 'var(--spacing-4)' }}>
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 'var(--spacing-6)',
+              flexWrap: 'wrap',
+            }}>
+              {/* Avatar */}
+              <div style={{
+                width: '120px',
+                height: '120px',
+                borderRadius: 'var(--border-radius-full)',
+                backgroundColor: getRoleColor(user.role),
+                color: 'var(--color-white)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontWeight: 'var(--font-weight-bold)',
+                fontSize: 'var(--font-size-4xl)',
+                flexShrink: 0,
+              }}>
+                {user.name?.charAt(0)?.toUpperCase() || 'U'}
+              </div>
 
-          {/* Additional profile details */}
+              {/* User Info */}
+              <div style={{ flex: 1 }}>
+                <div style={{
+                  fontSize: 'var(--font-size-2xl)',
+                  fontWeight: 'var(--font-weight-bold)',
+                  color: 'var(--color-gray-900)',
+                }}>
+                  {user.name}
+                </div>
+                <div style={{
+                  fontSize: 'var(--font-size-base)',
+                  color: 'var(--color-gray-600)',
+                  marginTop: 'var(--spacing-1)',
+                }}>
+                  {user.email}
+                </div>
+                <div style={{ marginTop: 'var(--spacing-2)' }}>
+                  <span style={{
+                    backgroundColor: getRoleColor(user.role),
+                    color: 'var(--color-white)',
+                    padding: 'var(--spacing-1) var(--spacing-3)',
+                    borderRadius: 'var(--border-radius-full)',
+                    fontSize: 'var(--font-size-sm)',
+                    fontWeight: 'var(--font-weight-medium)',
+                    display: 'inline-block',
+                  }}>
+                    {getRoleDisplay(user.role)}
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Profile Details */}
           <div className="card" style={{ marginTop: 'var(--spacing-4)' }}>
             <h4 style={{ marginBottom: 'var(--spacing-4)' }}>Profile Details</h4>
             <div style={{
@@ -139,7 +226,7 @@ const UserProfilePage = () => {
                   fontWeight: 'var(--font-weight-medium)',
                   color: 'var(--color-gray-900)',
                 }}>
-                  {user.role}
+                  {getRoleDisplay(user.role)}
                 </div>
               </div>
               <div>
@@ -148,7 +235,7 @@ const UserProfilePage = () => {
                   color: 'var(--color-gray-500)',
                   marginBottom: 'var(--spacing-1)',
                 }}>
-                  Name
+                  Full Name
                 </div>
                 <div style={{
                   fontSize: 'var(--font-size-sm)',
@@ -164,7 +251,7 @@ const UserProfilePage = () => {
                   color: 'var(--color-gray-500)',
                   marginBottom: 'var(--spacing-1)',
                 }}>
-                  Email
+                  Email Address
                 </div>
                 <div style={{
                   fontSize: 'var(--font-size-sm)',

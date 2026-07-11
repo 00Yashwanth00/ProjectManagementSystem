@@ -127,19 +127,6 @@ const LoginPage = () => {
             {isSubmitting ? 'Logging in...' : 'Sign In'}
           </button>
         </form>
-        
-        {/* Register link */}
-        <div style={{ 
-          marginTop: 'var(--spacing-4)',
-          textAlign: 'center',
-          fontSize: 'var(--font-size-sm)',
-          color: 'var(--color-gray-500)'
-        }}>
-          Don't have an account?{' '}
-          <Link to="/register" style={{ fontWeight: 'var(--font-weight-medium)' }}>
-            Register here
-          </Link>
-        </div>
       </div>
     </div>
   );

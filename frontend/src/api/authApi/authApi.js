@@ -2,9 +2,6 @@ import axiosInstance from '../axiosInstance';
 
 /**
  * Login user
- * @param {string} email - User email
- * @param {string} password - User password
- * @returns {Promise} - Axios response with token
  */
 export const login = async (email, password) => {
   const response = await axiosInstance.post('/auth/login', {
@@ -15,15 +12,11 @@ export const login = async (email, password) => {
 };
 
 /**
- * Register user
- * @param {Object} userData - User registration data
- * @param {string} userData.name - User name
- * @param {string} userData.email - User email
- * @param {string} userData.password - User password
- * @param {string} userData.role - User role (ADMIN, PROJECT_LEADER, TEAM_MEMBER)
- * @returns {Promise} - Axios response
+ * Register user - ADMIN only
+ * Creates user with EMPLOYEE role by default
  */
 export const register = async (userData) => {
+  // ✅ No role field - backend assigns EMPLOYEE by default
   const response = await axiosInstance.post('/auth/register', userData);
   return response;
 };

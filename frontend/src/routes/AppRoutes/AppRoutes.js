@@ -5,136 +5,40 @@ import ProtectedRoute from '../ProtectedRoute/ProtectedRoute';
 import RoleBasedRoute from '../RoleBasedRoute/RoleBasedRoute';
 import MainLayout from '../../components/layout/MainLayout';
 import PageWrapper from '../../components/layout/PageWrapper';
-import AllUsersPage from '../../features/users/pages/AllUsersPage';
-import UserProfilePage from '../../features/users/pages/UserProfilePage';
 
-// Import actual pages
+// Auth Pages
 import LoginPage from '../../features/auth/pages/LoginPage';
 import RegisterPage from '../../features/auth/pages/RegisterPage';
 
-// Updated placeholder pages with PageWrapper
-const DashboardPage = () => (
-  <PageWrapper 
-    title="Dashboard" 
-    subtitle="Welcome to Project Management System"
-  >
-    <div className="card">
-      <h3>Welcome back!</h3>
-      <p>You are logged in as <strong>{useAuth().user?.name}</strong> with role <strong>{useAuth().user?.role}</strong>.</p>
-      <div style={{ marginTop: 'var(--spacing-4)', display: 'flex', gap: 'var(--spacing-2)' }}>
-        <button className="btn btn-primary">Quick Action</button>
-        <button className="btn btn-secondary">View Stats</button>
-      </div>
-    </div>
-  </PageWrapper>
-);
+// User Pages
+import AllUsersPage from '../../features/users/pages/AllUsersPage';
+import UserProfilePage from '../../features/users/pages/UserProfilePage';
 
-const ProjectListPage = () => (
-  <PageWrapper 
-    title="Projects" 
-    subtitle="Manage your projects"
-    actions={
-      <>
-        <button className="btn btn-primary">+ New Project</button>
-      </>
-    }
-  >
-    <div className="card">
-      <p>Project list will appear here</p>
-    </div>
-  </PageWrapper>
-);
+// Project Pages
+import ProjectListPage from '../../features/projects/pages/ProjectListPage';
+import ProjectDetailsPage from '../../features/projects/pages/ProjectDetailsPage';
 
-const ProjectDetailsPage = () => (
-  <PageWrapper 
-    title="Project Details" 
-    subtitle="View and manage project"
-  >
-    <div className="card">
-      <p>Project details will appear here</p>
-    </div>
-  </PageWrapper>
-);
+import TaskBoardPage from '../../features/tasks/pages/TaskBoardPage';
+import TaskDetailsPage from '../../features/tasks/pages/TaskDetailsPage';
 
-const TaskListPage = () => (
-  <PageWrapper 
-    title="Tasks" 
-    subtitle="Manage your tasks"
-    actions={
-      <>
-        <button className="btn btn-primary">+ New Task</button>
-      </>
-    }
-  >
-    <div className="card">
-      <p>Task list will appear here</p>
-    </div>
-  </PageWrapper>
-);
-
-const TaskDetailsPage = () => (
-  <PageWrapper 
-    title="Task Details" 
-    subtitle="View and manage task"
-  >
-    <div className="card">
-      <p>Task details will appear here</p>
-    </div>
-  </PageWrapper>
-);
-
-const IssueListPage = () => (
-  <PageWrapper 
-    title="Issues" 
-    subtitle="Track and manage issues"
-    actions={
-      <>
-        <button className="btn btn-primary">+ New Issue</button>
-      </>
-    }
-  >
-    <div className="card">
-      <p>Issue list will appear here</p>
-    </div>
-  </PageWrapper>
-);
-
-const IssueDetailsPage = () => (
-  <PageWrapper 
-    title="Issue Details" 
-    subtitle="View and manage issue"
-  >
-    <div className="card">
-      <p>Issue details will appear here</p>
-    </div>
-  </PageWrapper>
-);
-
-const NotificationsPage = () => (
-  <PageWrapper 
-    title="Notifications" 
-    subtitle="Stay updated with your activities"
-  >
-    <div className="card">
-      <p>Notifications will appear here</p>
-    </div>
-  </PageWrapper>
-);
-
-// Helper to access auth in Dashboard
-const useAuth = () => {
-  const { useAuth: useAuthContext } = require('../../context/AuthContext/AuthContext');
-  return useAuthContext();
-};
+import DashboardPage from '../../features/dashboard/pages/DashboardPage';
 
 const AppRoutes = () => {
   return (
     <BrowserRouter>
       <AuthProvider>
         <Routes>
-          {/* Public Routes - No Layout */}
+          {/* Public Routes */}
           <Route path="/login" element={<LoginPage />} />
-          <Route path="/register" element={<RegisterPage />} />
+          
+          {/* ✅ Register is now ADMIN-only */}
+          <Route path="/register" element={
+            <ProtectedRoute>
+              <RoleBasedRoute allowedRoles={['ADMIN']}>
+                <RegisterPage />
+              </RoleBasedRoute>
+            </ProtectedRoute>
+          } />
           
           {/* Protected Routes with MainLayout */}
           <Route path="/" element={
@@ -145,6 +49,7 @@ const AppRoutes = () => {
             </ProtectedRoute>
           } />
           
+          {/* Project Routes */}
           <Route path="/projects" element={
             <ProtectedRoute>
               <MainLayout>
@@ -161,10 +66,10 @@ const AppRoutes = () => {
             </ProtectedRoute>
           } />
           
-          <Route path="/tasks" element={
+          <Route path="/projects/:projectId/tasks" element={
             <ProtectedRoute>
               <MainLayout>
-                <TaskListPage />
+                <TaskBoardPage />
               </MainLayout>
             </ProtectedRoute>
           } />
@@ -177,22 +82,7 @@ const AppRoutes = () => {
             </ProtectedRoute>
           } />
           
-          <Route path="/issues" element={
-            <ProtectedRoute>
-              <MainLayout>
-                <IssueListPage />
-              </MainLayout>
-            </ProtectedRoute>
-          } />
-          
-          <Route path="/issues/:issueId" element={
-            <ProtectedRoute>
-              <MainLayout>
-                <IssueDetailsPage />
-              </MainLayout>
-            </ProtectedRoute>
-          } />
-          
+          {/* User Routes */}
           <Route path="/users" element={
             <ProtectedRoute>
               <RoleBasedRoute allowedRoles={['ADMIN']}>
@@ -211,15 +101,25 @@ const AppRoutes = () => {
             </ProtectedRoute>
           } />
           
-          <Route path="/notifications" element={
+          <Route path="/profile/:userId" element={
             <ProtectedRoute>
               <MainLayout>
-                <NotificationsPage />
+                <UserProfilePage />
               </MainLayout>
             </ProtectedRoute>
           } />
           
-          {/* Fallback route */}
+          <Route path="/notifications" element={
+            <ProtectedRoute>
+              <MainLayout>
+                <PageWrapper title="Notifications" subtitle="Stay updated">
+                  <div className="card"><p>Notifications coming soon...</p></div>
+                </PageWrapper>
+              </MainLayout>
+            </ProtectedRoute>
+          } />
+          
+          {/* Fallback */}
           <Route path="*" element={
             <MainLayout>
               <PageWrapper title="404 - Page Not Found">

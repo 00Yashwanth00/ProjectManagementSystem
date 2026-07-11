@@ -1,7 +1,6 @@
 package com.yashwanth.pms.user.domain;
 
 import jakarta.persistence.*;
-
 import java.util.UUID;
 
 @Entity
@@ -15,54 +14,56 @@ public class User {
     @Column(nullable = false)
     private String name;
 
-    @Column(nullable = false, unique = true)
+    @Column(unique = true, nullable = false)
     private String email;
 
     @Column(nullable = false)
     private String password;
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
+    @Column(nullable = false, columnDefinition = "VARCHAR(50) DEFAULT 'EMPLOYEE'")
     private Role role;
 
-    protected User() {}
+    protected User() {
+        this.role = Role.EMPLOYEE;
+    }
+
+    public User(String name, String email, String password) {
+        this.name = name;
+        this.email = email;
+        this.password = password;
+        this.role = Role.EMPLOYEE;
+    }
 
     public User(String name, String email, String password, Role role) {
         this.name = name;
         this.email = email;
         this.password = password;
-        this.role = role;
+        this.role = role != null ? role : Role.EMPLOYEE;
     }
 
-    public UUID getId() {
-        return id;
+    // Getters and Setters
+    public UUID getId() { return id; }
+    public void setId(UUID id) { this.id = id; }
+    public String getName() { return name; }
+    public void setName(String name) { this.name = name; }
+    public String getEmail() { return email; }
+    public void setEmail(String email) { this.email = email; }
+    public String getPassword() { return password; }
+    public void setPassword(String password) { this.password = password; }
+    public Role getRole() { return role; }
+    public void setRole(Role role) { this.role = role; }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof User)) return false;
+        User user = (User) o;
+        return id != null && id.equals(user.id);
     }
 
-    public String getName() {
-        return name;
-    }
-
-    public String getEmail() {
-        return email;
-    }
-
-    public Role getRole() {
-        return role;
-    }
-
-    public String getPassword() {
-        return this.password;
-    }
-
-    public boolean isLeader() {
-        return role == Role.PROJECT_LEADER;
-    }
-
-    public void setId(UUID id) {
-        this.id = id;
-    }
-
-    public void setRole(Role role) {
-        this.role = role;
+    @Override
+    public int hashCode() {
+        return getClass().hashCode();
     }
 }

@@ -2,20 +2,24 @@ import React, { useState, useEffect } from 'react';
 import PageWrapper from '../../../components/layout/PageWrapper';
 import UserCard from '../components/UserCard';
 import { getAllUsers } from '../../../api/userApi/userApi';
+import { useAuth } from '../../../context/AuthContext/AuthContext';
 
 const AllUsersPage = () => {
+  const { user: currentUser } = useAuth();
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
 
-  // Fetch all users on component mount
+  const isAdmin = currentUser?.role === 'ADMIN';
+
   useEffect(() => {
-    fetchUsers();
-  }, []);
+    if (isAdmin) {
+      fetchUsers();
+    }
+  }, [isAdmin]);
 
   const fetchUsers = async () => {
-    console.log('Fetching all users from AllUsersPage...');
     try {
       setLoading(true);
       setError(null);
@@ -29,7 +33,6 @@ const AllUsersPage = () => {
     }
   };
 
-  // Filter users based on search term
   const filteredUsers = users.filter((user) => {
     const searchLower = searchTerm.toLowerCase();
     return (
@@ -39,16 +42,39 @@ const AllUsersPage = () => {
     );
   });
 
-  // Stats
+  // ✅ Stats - only ADMIN and EMPLOYEE roles
   const totalUsers = users.length;
   const adminCount = users.filter(u => u.role === 'ADMIN').length;
-  const leaderCount = users.filter(u => u.role === 'PROJECT_LEADER').length;
-  const memberCount = users.filter(u => u.role === 'TEAM_MEMBER').length;
+  const employeeCount = users.filter(u => u.role === 'EMPLOYEE').length;
 
-  // Refresh handler
-  const handleRefresh = () => {
-    fetchUsers();
+  // ✅ Helper to get role display
+  const getRoleDisplay = (role) => {
+    const roleMap = {
+      'ADMIN': 'Admin',
+      'EMPLOYEE': 'Employee'
+    };
+    return roleMap[role] || role;
   };
+
+  if (!isAdmin) {
+    return (
+      <PageWrapper title="Access Denied">
+        <div className="card" style={{ textAlign: 'center', padding: 'var(--spacing-8)' }}>
+          <h3 style={{ color: 'var(--color-danger)' }}>⛔ Access Denied</h3>
+          <p style={{ color: 'var(--color-gray-500)' }}>
+            You don't have permission to view this page.
+          </p>
+          <button
+            className="btn btn-primary"
+            onClick={() => window.history.back()}
+            style={{ marginTop: 'var(--spacing-4)' }}
+          >
+            Go Back
+          </button>
+        </div>
+      </PageWrapper>
+    );
+  }
 
   return (
     <PageWrapper
@@ -57,8 +83,14 @@ const AllUsersPage = () => {
       actions={
         <>
           <button
+            className="btn btn-primary"
+            onClick={() => window.location.href = '/register'}
+          >
+            + New User
+          </button>
+          <button
             className="btn btn-secondary"
-            onClick={handleRefresh}
+            onClick={fetchUsers}
             disabled={loading}
           >
             {loading ? 'Loading...' : '🔄 Refresh'}
@@ -66,8 +98,7 @@ const AllUsersPage = () => {
         </>
       }
     >
-      {/* Stats Cards */}
-      <div className="grid grid-cols-4" style={{ marginBottom: 'var(--spacing-6)' }}>
+      <div className="grid grid-cols-3" style={{ marginBottom: 'var(--spacing-6)' }}>
         <div className="card" style={{ textAlign: 'center' }}>
           <div style={{ fontSize: 'var(--font-size-2xl)', fontWeight: 'var(--font-weight-bold)', color: 'var(--color-primary)' }}>
             {totalUsers}
@@ -81,20 +112,13 @@ const AllUsersPage = () => {
           <div style={{ fontSize: 'var(--font-size-sm)', color: 'var(--color-gray-500)' }}>Admins</div>
         </div>
         <div className="card" style={{ textAlign: 'center' }}>
-          <div style={{ fontSize: 'var(--font-size-2xl)', fontWeight: 'var(--font-weight-bold)', color: 'var(--color-warning)' }}>
-            {leaderCount}
+          <div style={{ fontSize: 'var(--font-size-2xl)', fontWeight: 'var(--font-weight-bold)', color: 'var(--color-success)' }}>
+            {employeeCount}
           </div>
-          <div style={{ fontSize: 'var(--font-size-sm)', color: 'var(--color-gray-500)' }}>Project Leaders</div>
-        </div>
-        <div className="card" style={{ textAlign: 'center' }}>
-          <div style={{ fontSize: 'var(--font-size-2xl)', fontWeight: 'var(--font-weight-bold)', color: 'var(--color-primary)' }}>
-            {memberCount}
-          </div>
-          <div style={{ fontSize: 'var(--font-size-sm)', color: 'var(--color-gray-500)' }}>Team Members</div>
+          <div style={{ fontSize: 'var(--font-size-sm)', color: 'var(--color-gray-500)' }}>Employees</div>
         </div>
       </div>
 
-      {/* Search Bar */}
       <div style={{ marginBottom: 'var(--spacing-4)' }}>
         <input
           type="text"
@@ -109,12 +133,11 @@ const AllUsersPage = () => {
         />
       </div>
 
-      {/* Error Message */}
       {error && (
         <div className="alert alert-danger" style={{ marginBottom: 'var(--spacing-4)' }}>
           {error}
           <button
-            onClick={handleRefresh}
+            onClick={fetchUsers}
             style={{
               marginLeft: 'var(--spacing-2)',
               color: 'var(--color-primary)',
@@ -129,14 +152,12 @@ const AllUsersPage = () => {
         </div>
       )}
 
-      {/* Loading State */}
       {loading && (
         <div style={{ textAlign: 'center', padding: 'var(--spacing-8)' }}>
           <p>Loading users...</p>
         </div>
       )}
 
-      {/* User List */}
       {!loading && !error && (
         <>
           {filteredUsers.length === 0 ? (
@@ -148,7 +169,13 @@ const AllUsersPage = () => {
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
               {filteredUsers.map((user) => (
-                <UserCard key={user.id} user={user} />
+                <UserCard 
+                  key={user.id} 
+                  user={{
+                    ...user,
+                    roleDisplay: getRoleDisplay(user.role)
+                  }} 
+                />
               ))}
             </div>
           )}

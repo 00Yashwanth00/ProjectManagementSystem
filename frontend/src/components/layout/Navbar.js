@@ -16,6 +16,26 @@ const Navbar = () => {
     setIsMobileMenuOpen(!isMobileMenuOpen);
   };
 
+  // ✅ Navigate to profile page when user clicks on their avatar/name
+  const handleProfileClick = () => {
+    navigate('/profile');
+  };
+
+  // ✅ Get user initial for avatar
+  const getUserInitial = () => {
+    if (!user?.name) return 'U';
+    return user.name.charAt(0).toUpperCase();
+  };
+
+  // ✅ Get role display
+  const getRoleDisplay = (role) => {
+    const roleMap = {
+      'ADMIN': 'Admin',
+      'EMPLOYEE': 'Employee'
+    };
+    return roleMap[role] || role;
+  };
+
   return (
     <nav style={{
       backgroundColor: 'var(--color-white)',
@@ -162,17 +182,27 @@ const Navbar = () => {
                   </span>
                 </Link>
 
-                {/* User Info */}
-                <div style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 'var(--spacing-3)',
-                }}>
+                {/* ✅ Clickable User Profile Section */}
+                <div 
+                  onClick={handleProfileClick}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 'var(--spacing-3)',
+                    cursor: 'pointer',
+                    padding: 'var(--spacing-1) var(--spacing-2)',
+                    borderRadius: 'var(--border-radius-full)',
+                    transition: 'background var(--transition-fast)',
+                  }}
+                  onMouseEnter={(e) => e.currentTarget.style.background = 'var(--color-gray-100)'}
+                  onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
+                >
+                  {/* User Avatar */}
                   <div style={{
                     width: '32px',
                     height: '32px',
                     borderRadius: 'var(--border-radius-full)',
-                    backgroundColor: 'var(--color-primary)',
+                    backgroundColor: user?.role === 'ADMIN' ? 'var(--color-danger)' : 'var(--color-primary)',
                     color: 'var(--color-white)',
                     display: 'flex',
                     alignItems: 'center',
@@ -180,8 +210,10 @@ const Navbar = () => {
                     fontWeight: 'var(--font-weight-bold)',
                     fontSize: 'var(--font-size-sm)',
                   }}>
-                    {user?.name?.charAt(0)?.toUpperCase() || 'U'}
+                    {getUserInitial()}
                   </div>
+                  
+                  {/* User Name & Role */}
                   <div style={{ display: 'flex', flexDirection: 'column' }}>
                     <span style={{
                       fontSize: 'var(--font-size-sm)',
@@ -194,9 +226,18 @@ const Navbar = () => {
                       fontSize: 'var(--font-size-xs)',
                       color: 'var(--color-gray-500)',
                     }}>
-                      {user?.role || 'Role'}
+                      {getRoleDisplay(user?.role)}
                     </span>
                   </div>
+
+                  {/* Dropdown arrow indicator */}
+                  <span style={{
+                    fontSize: 'var(--font-size-xs)',
+                    color: 'var(--color-gray-400)',
+                    marginLeft: 'var(--spacing-1)',
+                  }}>
+                    ▼
+                  </span>
                 </div>
 
                 <button
@@ -268,6 +309,17 @@ const Navbar = () => {
             <Link to="/users" style={{ padding: 'var(--spacing-2)' }}>Users</Link>
           )}
           <Link to="/notifications" style={{ padding: 'var(--spacing-2)' }}>Notifications</Link>
+          
+          {/* ✅ Mobile Profile Link */}
+          <Link to="/profile" style={{ 
+            padding: 'var(--spacing-2)',
+            borderTop: 'var(--border-width) solid var(--border-color)',
+            marginTop: 'var(--spacing-2)',
+            paddingTop: 'var(--spacing-2)',
+          }}>
+            👤 My Profile
+          </Link>
+          
           <hr style={{ margin: 'var(--spacing-2) 0' }} />
           <button onClick={handleLogout} className="btn btn-danger" style={{ width: '100%' }}>
             Logout

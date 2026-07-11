@@ -2,6 +2,8 @@ package com.yashwanth.pms.security;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.security.access.hierarchicalroles.RoleHierarchy;
+import org.springframework.security.access.hierarchicalroles.RoleHierarchyImpl;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
@@ -33,12 +35,13 @@ public class SecurityConfig {
     @Bean
     SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
-                // ✅ Add CORS configuration
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .csrf(AbstractHttpConfigurer::disable)
                 .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/api/auth/**").permitAll()
+                        .requestMatchers("/api/auth/register").permitAll()
+                        .requestMatchers("/api/auth/login").permitAll()
+                        .requestMatchers("/api/auth/admin/**").hasRole("ADMIN")
                         .requestMatchers("/api/projects/**").authenticated()
                         .anyRequest().authenticated()
                 )
@@ -47,30 +50,27 @@ public class SecurityConfig {
         return http.build();
     }
 
-    // ✅ Add CORS configuration source
+    // ✅ NEW: Role hierarchy configuration
+    @Bean
+    public RoleHierarchy roleHierarchy() {
+        RoleHierarchyImpl hierarchy = new RoleHierarchyImpl();
+        // ADMIN has all permissions of PROJECT_LEADER and TEAM_MEMBER
+        // PROJECT_LEADER has all permissions of TEAM_MEMBER
+        hierarchy.setHierarchy("ROLE_ADMIN > ROLE_PROJECT_LEADER > ROLE_TEAM_MEMBER");
+        return hierarchy;
+    }
+
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-
-        // Allow frontend origin
         configuration.setAllowedOrigins(Arrays.asList("http://localhost:3000"));
-
-        // Allow all HTTP methods
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"));
-
-        // Allow all headers
         configuration.setAllowedHeaders(Arrays.asList("*"));
-
-        // Allow credentials (cookies, authorization headers)
         configuration.setAllowCredentials(true);
-
-        // Cache preflight requests for 1 hour
         configuration.setMaxAge(3600L);
 
-        // Register configuration for all endpoints
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", configuration);
-
         return source;
     }
 

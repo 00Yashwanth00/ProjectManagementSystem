@@ -25,7 +25,7 @@ public class TaskController {
     }
 
     @PostMapping
-    @PreAuthorize("hasAnyRole('ADMIN','PROJECT_LEADER')")
+    @PreAuthorize("hasRole('PROJECT_LEADER')")
     @ResponseStatus(HttpStatus.CREATED)
     public TaskResponse createTask(
             @PathVariable UUID projectId,

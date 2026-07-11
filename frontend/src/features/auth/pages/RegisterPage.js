@@ -8,21 +8,23 @@ const RegisterPage = () => {
     email: '',
     password: '',
     confirmPassword: '',
-    role: 'TEAM_MEMBER',
   });
   const [formError, setFormError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [registrationSuccess, setRegistrationSuccess] = useState(false);
   
-  const { register, isAuthenticated } = useAuth();
+  const { register, isAuthenticated, isAdmin } = useAuth();
   const navigate = useNavigate();
 
-  // Redirect if already authenticated
+  // ✅ Redirect if not ADMIN (only admins can register users)
   useEffect(() => {
     if (isAuthenticated) {
-      navigate('/');
+      if (!isAdmin()) {
+        // Non-admin users should not be on register page
+        navigate('/');
+      }
     }
-  }, [isAuthenticated, navigate]);
+  }, [isAuthenticated, isAdmin, navigate]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -34,7 +36,6 @@ const RegisterPage = () => {
     setFormError('');
     setRegistrationSuccess(false);
     
-    // Validate form
     if (!formData.name.trim()) {
       setFormError('Name is required');
       return;
@@ -58,7 +59,7 @@ const RegisterPage = () => {
     
     setIsSubmitting(true);
     
-    // Prepare data for API (remove confirmPassword)
+    // ✅ Remove confirmPassword, no role field needed
     const { confirmPassword, ...registrationData } = formData;
     
     const result = await register(registrationData);
@@ -72,16 +73,64 @@ const RegisterPage = () => {
         email: '',
         password: '',
         confirmPassword: '',
-        role: 'TEAM_MEMBER',
       });
-      // Redirect to login after 2 seconds
       setTimeout(() => {
-        navigate('/login');
+        navigate('/users'); // Redirect to users list
       }, 2000);
     } else {
       setFormError(result.error);
     }
   };
+
+  // ✅ If not logged in, show login required message
+  if (!isAuthenticated) {
+    return (
+      <div className="container" style={{ 
+        minHeight: '100vh',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: 'var(--spacing-4)'
+      }}>
+        <div className="card" style={{ maxWidth: '500px', width: '100%', textAlign: 'center' }}>
+          <h3>🔒 Access Restricted</h3>
+          <p style={{ color: 'var(--color-gray-500)' }}>
+            Only Admins can create new users.
+          </p>
+          <Link to="/login" className="btn btn-primary" style={{ marginTop: 'var(--spacing-4)' }}>
+            Login as Admin
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
+  // ✅ If logged in but not admin
+  if (!isAdmin()) {
+    return (
+      <div className="container" style={{ 
+        minHeight: '100vh',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: 'var(--spacing-4)'
+      }}>
+        <div className="card" style={{ maxWidth: '500px', width: '100%', textAlign: 'center' }}>
+          <h3>⛔ Access Denied</h3>
+          <p style={{ color: 'var(--color-gray-500)' }}>
+            You don't have permission to create users.
+          </p>
+          <button
+            className="btn btn-secondary"
+            onClick={() => navigate('/')}
+            style={{ marginTop: 'var(--spacing-4)' }}
+          >
+            Go to Dashboard
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="container" style={{ 
@@ -93,28 +142,25 @@ const RegisterPage = () => {
     }}>
       <div className="card" style={{ maxWidth: '500px', width: '100%' }}>
         <div className="card-header">
-          <h2 className="card-title" style={{ textAlign: 'center' }}>Register</h2>
+          <h2 className="card-title" style={{ textAlign: 'center' }}>Create New User</h2>
           <p style={{ textAlign: 'center', color: 'var(--color-gray-500)', fontSize: 'var(--font-size-sm)', marginTop: 'var(--spacing-2)' }}>
-            Create your account
+            New users will be assigned the <strong>EMPLOYEE</strong> role by default
           </p>
         </div>
         
-        {/* Success message */}
         {registrationSuccess && (
           <div className="alert alert-success" style={{ marginBottom: 'var(--spacing-4)' }}>
-            Registration successful! Redirecting to login...
+            ✅ User created successfully! Redirecting to users list...
           </div>
         )}
         
         <form onSubmit={handleSubmit}>
-          {/* Error message */}
           {formError && !registrationSuccess && (
             <div className="alert alert-danger" style={{ marginBottom: 'var(--spacing-4)' }}>
               {formError}
             </div>
           )}
           
-          {/* Name field */}
           <div style={{ marginBottom: 'var(--spacing-4)' }}>
             <label htmlFor="name" style={{ 
               display: 'block', 
@@ -122,7 +168,7 @@ const RegisterPage = () => {
               fontWeight: 'var(--font-weight-medium)',
               fontSize: 'var(--font-size-sm)'
             }}>
-              Full Name
+              Full Name <span style={{ color: 'var(--color-danger)' }}>*</span>
             </label>
             <input
               id="name"
@@ -136,7 +182,6 @@ const RegisterPage = () => {
             />
           </div>
           
-          {/* Email field */}
           <div style={{ marginBottom: 'var(--spacing-4)' }}>
             <label htmlFor="email" style={{ 
               display: 'block', 
@@ -144,7 +189,7 @@ const RegisterPage = () => {
               fontWeight: 'var(--font-weight-medium)',
               fontSize: 'var(--font-size-sm)'
             }}>
-              Email Address
+              Email Address <span style={{ color: 'var(--color-danger)' }}>*</span>
             </label>
             <input
               id="email"
@@ -152,13 +197,12 @@ const RegisterPage = () => {
               type="email"
               value={formData.email}
               onChange={handleChange}
-              placeholder="user@test.com"
+              placeholder="user@company.com"
               style={{ width: '100%' }}
               disabled={isSubmitting || registrationSuccess}
             />
           </div>
           
-          {/* Password field */}
           <div style={{ marginBottom: 'var(--spacing-4)' }}>
             <label htmlFor="password" style={{ 
               display: 'block', 
@@ -166,7 +210,7 @@ const RegisterPage = () => {
               fontWeight: 'var(--font-weight-medium)',
               fontSize: 'var(--font-size-sm)'
             }}>
-              Password (min 6 characters)
+              Password (min 6 characters) <span style={{ color: 'var(--color-danger)' }}>*</span>
             </label>
             <input
               id="password"
@@ -180,15 +224,14 @@ const RegisterPage = () => {
             />
           </div>
           
-          {/* Confirm Password field */}
-          <div style={{ marginBottom: 'var(--spacing-4)' }}>
+          <div style={{ marginBottom: 'var(--spacing-6)' }}>
             <label htmlFor="confirmPassword" style={{ 
               display: 'block', 
               marginBottom: 'var(--spacing-2)',
               fontWeight: 'var(--font-weight-medium)',
               fontSize: 'var(--font-size-sm)'
             }}>
-              Confirm Password
+              Confirm Password <span style={{ color: 'var(--color-danger)' }}>*</span>
             </label>
             <input
               id="confirmPassword"
@@ -201,52 +244,44 @@ const RegisterPage = () => {
               disabled={isSubmitting || registrationSuccess}
             />
           </div>
-          
-          {/* Role selection */}
-          <div style={{ marginBottom: 'var(--spacing-6)' }}>
-            <label htmlFor="role" style={{ 
-              display: 'block', 
-              marginBottom: 'var(--spacing-2)',
-              fontWeight: 'var(--font-weight-medium)',
-              fontSize: 'var(--font-size-sm)'
-            }}>
-              Role
-            </label>
-            <select
-              id="role"
-              name="role"
-              value={formData.role}
-              onChange={handleChange}
-              style={{ width: '100%' }}
-              disabled={isSubmitting || registrationSuccess}
-            >
-              <option value="TEAM_MEMBER">Team Member</option>
-              <option value="PROJECT_LEADER">Project Leader</option>
-              <option value="ADMIN">Admin</option>
-            </select>
+
+          {/* ✅ Role info banner - no dropdown */}
+          <div style={{
+            marginBottom: 'var(--spacing-4)',
+            padding: 'var(--spacing-3)',
+            backgroundColor: 'var(--color-primary-bg)',
+            borderRadius: 'var(--border-radius-md)',
+            border: '1px solid var(--color-primary)',
+            fontSize: 'var(--font-size-sm)',
+            color: 'var(--color-primary)',
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-2)' }}>
+              <span>ℹ️</span>
+              <span>
+                New users will be created with the <strong>EMPLOYEE</strong> role.
+                You can change their role later via database or system configuration.
+              </span>
+            </div>
           </div>
           
-          {/* Submit button */}
           <button
             type="submit"
             className="btn btn-primary"
             style={{ width: '100%' }}
             disabled={isSubmitting || registrationSuccess}
           >
-            {isSubmitting ? 'Registering...' : 'Create Account'}
+            {isSubmitting ? 'Creating User...' : 'Create User'}
           </button>
         </form>
         
-        {/* Login link */}
         <div style={{ 
           marginTop: 'var(--spacing-4)',
           textAlign: 'center',
           fontSize: 'var(--font-size-sm)',
           color: 'var(--color-gray-500)'
         }}>
-          Already have an account?{' '}
-          <Link to="/login" style={{ fontWeight: 'var(--font-weight-medium)' }}>
-            Login here
+          <Link to="/users" style={{ fontWeight: 'var(--font-weight-medium)' }}>
+            ← Back to Users
           </Link>
         </div>
       </div>

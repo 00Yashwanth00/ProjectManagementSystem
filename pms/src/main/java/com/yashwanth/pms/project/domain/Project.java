@@ -1,6 +1,5 @@
 package com.yashwanth.pms.project.domain;
 
-import com.yashwanth.pms.project.domain.ProjectStatus;
 import com.yashwanth.pms.user.domain.User;
 import jakarta.persistence.*;
 
@@ -23,7 +22,7 @@ public class Project {
     @Column(nullable = false)
     private ProjectStatus status;
 
-    @ManyToOne(optional = false)
+    @ManyToOne
     @JoinColumn(name = "leader_id")
     private User leader;
 
@@ -35,9 +34,11 @@ public class Project {
     )
     private Set<User> members = new HashSet<>();
 
-    protected Project() {
-        // JPA
-    }
+    // ❌ Removed: memberRoles map / project_member_roles table.
+    // Project-level role (PROJECT_LEADER vs TEAM_MEMBER) is NOT persisted.
+    // It is derived on read by comparing a member against `leader` — see getMemberRole().
+
+    protected Project() {}
 
     public Project(String name, User leader) {
         this.name = name;
@@ -46,23 +47,45 @@ public class Project {
         this.members.add(leader);
     }
 
-    public UUID getId() {
-        return id;
+    // Getters and Setters
+    public UUID getId() { return id; }
+    public String getName() { return name; }
+    public ProjectStatus getStatus() { return status; }
+    public void setStatus(ProjectStatus status) { this.status = status; }
+    public User getLeader() { return leader; }
+    public void setLeader(User leader) { this.leader = leader; }
+    public Set<User> getMembers() { return members; }
+
+    // Business methods
+    public void addMember(User user) {
+        this.members.add(user);
     }
 
-    public String getName() {
-        return name;
+    public void removeMember(User user) {
+        this.members.remove(user);
     }
 
-    public ProjectStatus getStatus() {
-        return status;
+    /**
+     * Derives this user's role WITHIN THIS PROJECT.
+     * Not stored anywhere — purely a function of (leader, members) at read time.
+     * A user is only ever "PROJECT_LEADER" while they equal project.leader;
+     * the moment the leader changes, the old leader is automatically "TEAM_MEMBER"
+     * again with no write required.
+     */
+    public String getMemberRole(User user) {
+        if (user == null) return "NONE";
+        if (isLeader(user)) return "PROJECT_LEADER";
+        if (isMember(user)) return "TEAM_MEMBER";
+        return "NONE";
     }
 
-    public User getLeader() {
-        return leader;
+    public boolean isLeader(User user) {
+        if (user == null || leader == null) return false;
+        return leader.getId().equals(user.getId());
     }
 
-    public Set<User> getMembers() {
-        return members;
+    public boolean isMember(User user) {
+        if (user == null) return false;
+        return members.contains(user);
     }
 }

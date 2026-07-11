@@ -15,9 +15,6 @@ public class RegisterRequest {
     @NotBlank
     private String password;
 
-    @NotBlank
-    private String role;
-
     public String getName() {
         return name;
     }
@@ -42,11 +39,4 @@ public class RegisterRequest {
         this.password = password;
     }
 
-    public String getRole() {
-        return role;
-    }
-
-    public void setRole(String role) {
-        this.role = role;
-    }
 }

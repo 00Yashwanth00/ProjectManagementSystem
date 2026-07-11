@@ -1,22 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { getAllUsers } from '../../../api/userApi/userApi';
 
-/**
- * UserSelect Component
- * Reusable dropdown for selecting a user
- * Used in task assignment, issue assignment, project members, etc.
- * 
- * @param {Object} props
- * @param {string} props.value - Currently selected user ID
- * @param {function} props.onChange - Callback when selection changes
- * @param {string} props.placeholder - Placeholder text (default: "Select a user")
- * @param {string} props.label - Optional label for the select
- * @param {boolean} props.required - Whether the field is required
- * @param {boolean} props.disabled - Whether the field is disabled
- * @param {string} props.className - Additional CSS classes
- * @param {Array} props.excludeUserIds - Array of user IDs to exclude from the list
- * @param {string} props.size - Size of the select (sm, md, lg)
- */
 const UserSelect = ({
   value,
   onChange,
@@ -24,15 +8,15 @@ const UserSelect = ({
   label,
   required = false,
   disabled = false,
-  className = '',
   excludeUserIds = [],
+  excludeAdmins = false,
   size = 'md',
+  className = '',
 }) => {
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // Fetch users on component mount
   useEffect(() => {
     fetchUsers();
   }, []);
@@ -42,10 +26,21 @@ const UserSelect = ({
       setLoading(true);
       setError(null);
       const response = await getAllUsers();
-      // Filter out excluded users
-      const filteredUsers = response.data.filter(
-        user => !excludeUserIds.includes(user.id)
-      );
+      
+      let filteredUsers = response.data;
+      
+      if (excludeUserIds.length > 0) {
+        filteredUsers = filteredUsers.filter(
+          user => !excludeUserIds.includes(user.id)
+        );
+      }
+      
+      if (excludeAdmins) {
+        filteredUsers = filteredUsers.filter(
+          user => user.role !== 'ADMIN'
+        );
+      }
+      
       setUsers(filteredUsers);
     } catch (err) {
       console.error('Failed to fetch users:', err);
@@ -55,19 +50,25 @@ const UserSelect = ({
     }
   };
 
-  // Get user name by ID
   const getUserName = (userId) => {
     const user = users.find(u => u.id === userId);
     return user ? user.name : '';
   };
 
-  // Handle change
+  // ✅ Only ADMIN and EMPLOYEE
+  const getRoleDisplay = (role) => {
+    const roleMap = {
+      'ADMIN': 'Admin',
+      'EMPLOYEE': 'Employee'
+    };
+    return roleMap[role] || role;
+  };
+
   const handleChange = (e) => {
     const selectedId = e.target.value;
     onChange(selectedId);
   };
 
-  // Size styles
   const sizeStyles = {
     sm: { padding: 'var(--spacing-1) var(--spacing-2)', fontSize: 'var(--font-size-sm)' },
     md: { padding: 'var(--spacing-2) var(--spacing-3)', fontSize: 'var(--font-size-base)' },
@@ -173,7 +174,7 @@ const UserSelect = ({
         <option value="">{placeholder}</option>
         {users.map((user) => (
           <option key={user.id} value={user.id}>
-            {user.name} ({user.email}) - {user.role}
+            {user.name} ({user.email}) - {getRoleDisplay(user.role)}
           </option>
         ))}
       </select>
@@ -184,6 +185,15 @@ const UserSelect = ({
           color: 'var(--color-gray-500)',
         }}>
           Selected: {getUserName(value)}
+        </div>
+      )}
+      {excludeAdmins && (
+        <div style={{
+          marginTop: 'var(--spacing-1)',
+          fontSize: 'var(--font-size-xs)',
+          color: 'var(--color-gray-400)',
+        }}>
+          💡 Admin users are excluded from this list
         </div>
       )}
     </div>

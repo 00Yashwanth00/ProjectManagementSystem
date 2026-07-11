@@ -1,25 +1,26 @@
 import React from 'react';
 
-/**
- * UserCard Component
- * Displays user information in a card format
- * 
- * @param {Object} props
- * @param {Object} props.user - User object
- * @param {function} props.onClick - Click handler (optional)
- * @param {boolean} props.compact - Compact mode (default: false)
- */
 const UserCard = ({ user, onClick, compact = false }) => {
   if (!user) return null;
+
+  // ✅ Only ADMIN and EMPLOYEE are system roles
+  const getRoleDisplay = (role) => {
+    if (!role) return 'Employee';
+    
+    const roleMap = {
+      'ADMIN': 'Admin',
+      'EMPLOYEE': 'Employee'
+    };
+    
+    return roleMap[role] || role;
+  };
 
   const getRoleColor = (role) => {
     switch (role) {
       case 'ADMIN':
         return 'var(--color-danger)';
-      case 'PROJECT_LEADER':
-        return 'var(--color-warning)';
-      case 'TEAM_MEMBER':
-        return 'var(--color-primary)';
+      case 'EMPLOYEE':
+        return 'var(--color-gray-500)';
       default:
         return 'var(--color-gray-500)';
     }
@@ -34,6 +35,10 @@ const UserCard = ({ user, onClick, compact = false }) => {
     fontWeight: 'var(--font-weight-medium)',
     display: 'inline-block',
   });
+
+  // ✅ Use roleDisplay if provided (for project-specific roles like PROJECT_LEADER or TEAM_MEMBER)
+  const displayRole = user.roleDisplay || getRoleDisplay(user.role);
+  const roleForColor = user.role === 'ADMIN' ? 'ADMIN' : 'EMPLOYEE';
 
   if (compact) {
     return (
@@ -58,7 +63,7 @@ const UserCard = ({ user, onClick, compact = false }) => {
           width: '32px',
           height: '32px',
           borderRadius: 'var(--border-radius-full)',
-          backgroundColor: getRoleColor(user.role),
+          backgroundColor: getRoleColor(roleForColor),
           color: 'var(--color-white)',
           display: 'flex',
           alignItems: 'center',
@@ -90,8 +95,8 @@ const UserCard = ({ user, onClick, compact = false }) => {
             {user.email}
           </div>
         </div>
-        <span style={getRoleBadgeStyle(user.role)}>
-          {user.role}
+        <span style={getRoleBadgeStyle(roleForColor)}>
+          {displayRole}
         </span>
       </div>
     );
@@ -121,7 +126,7 @@ const UserCard = ({ user, onClick, compact = false }) => {
           width: '64px',
           height: '64px',
           borderRadius: 'var(--border-radius-full)',
-          backgroundColor: getRoleColor(user.role),
+          backgroundColor: getRoleColor(roleForColor),
           color: 'var(--color-white)',
           display: 'flex',
           alignItems: 'center',
@@ -148,8 +153,8 @@ const UserCard = ({ user, onClick, compact = false }) => {
             {user.email}
           </div>
           <div style={{ marginTop: 'var(--spacing-2)' }}>
-            <span style={getRoleBadgeStyle(user.role)}>
-              {user.role}
+            <span style={getRoleBadgeStyle(roleForColor)}>
+              {displayRole}
             </span>
           </div>
         </div>
