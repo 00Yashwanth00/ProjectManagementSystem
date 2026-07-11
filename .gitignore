@@ -1,13 +1,62 @@
-/target/
-/.idea/
-/.vscode/
+# IDE
+.idea/
 *.iml
-.env
-application-local.yml
-/E_RDiagram_files/
-*.mdj
-*.txt
-E_RDiagram.html
-/node_modules/
-/frontend/README.md
+.vscode/
+.settings/
+.classpath
+.project
+.DS_Store
 
+# Backend (Spring Boot)
+pms/target/
+pms/.mvn/wrapper/maven-wrapper.jar
+pms/mvnw
+pms/mvnw.cmd
+pms/*.log
+pms/*.zip
+
+# Frontend (React)
+frontend/node_modules/
+frontend/build/
+frontend/dist/
+frontend/.env
+frontend/.env.local
+frontend/coverage/
+frontend/package-lock.json
+
+# Generated/Compiled
+*.class
+*.jar
+*.war
+*.log
+
+# Database
+*.db
+*.sqlite
+*.h2.db
+
+# Environment
+.env
+*.pem
+*.key
+*.crt
+
+# OS Files
+Thumbs.db
+
+# Project specific
+*.mdj
+*.jpg
+*.png
+*.gif
+E_RDiagram_files/
+fileStructure.txt
+frontend/frontend_folderstructure.txt
+E_RDiagram.html
+schema.sql
+ProjectSurveyReport.txt
+UseCaseDiagramExplanation.txt
+ClassDiagram1.jpg
+UseCaseDiagram1.jpg
+ClassDiagram.mdj
+UseCaseDiagram.mdj
