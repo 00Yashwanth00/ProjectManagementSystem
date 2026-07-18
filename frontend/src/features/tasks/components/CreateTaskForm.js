@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import UserSelect from '../../users/components/UserSelect';
+import ProjectMemberSelect from '../../users/components/ProjectMemberSelect';
 import { TASK_PRIORITY_LABELS } from '../../../utils/constants/taskConstants';
 
 const CreateTaskForm = ({ projectId, onSuccess, onCancel }) => {
@@ -7,7 +7,7 @@ const CreateTaskForm = ({ projectId, onSuccess, onCancel }) => {
     title: '',
     description: '',
     priority: 'MEDIUM',
-    assigneeId: '',
+    assigneeId: '',  // ✅ This will be sent to backend
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -16,7 +16,6 @@ const CreateTaskForm = ({ projectId, onSuccess, onCancel }) => {
     e.preventDefault();
     setError(null);
 
-    // Validate
     if (!formData.title.trim()) {
       setError('Task title is required');
       return;
@@ -24,10 +23,9 @@ const CreateTaskForm = ({ projectId, onSuccess, onCancel }) => {
 
     try {
       setLoading(true);
-      // API call will be made from parent
+      // ✅ Send the entire formData including assigneeId
       await onSuccess(formData);
       setLoading(false);
-      // Reset form
       setFormData({
         title: '',
         description: '',
@@ -56,7 +54,6 @@ const CreateTaskForm = ({ projectId, onSuccess, onCancel }) => {
       )}
 
       <form onSubmit={handleSubmit}>
-        {/* Task Title */}
         <div style={{ marginBottom: 'var(--spacing-4)' }}>
           <label
             htmlFor="task-title"
@@ -81,7 +78,6 @@ const CreateTaskForm = ({ projectId, onSuccess, onCancel }) => {
           />
         </div>
 
-        {/* Description */}
         <div style={{ marginBottom: 'var(--spacing-4)' }}>
           <label
             htmlFor="task-description"
@@ -105,7 +101,6 @@ const CreateTaskForm = ({ projectId, onSuccess, onCancel }) => {
           />
         </div>
 
-        {/* Priority */}
         <div style={{ marginBottom: 'var(--spacing-4)' }}>
           <label
             htmlFor="task-priority"
@@ -132,18 +127,18 @@ const CreateTaskForm = ({ projectId, onSuccess, onCancel }) => {
           </select>
         </div>
 
-        {/* Assignee */}
+        {/* ✅ ProjectMemberSelect for assigning during creation */}
         <div style={{ marginBottom: 'var(--spacing-4)' }}>
-          <UserSelect
-            label="Assign To"
+          <ProjectMemberSelect
+            projectId={projectId}
+            label="Assign To (Optional)"
             value={formData.assigneeId}
             onChange={(userId) => setFormData(prev => ({ ...prev, assigneeId: userId }))}
-            placeholder="Select assignee (optional)"
+            placeholder="Select a team member (optional)"
             disabled={loading}
           />
         </div>
 
-        {/* Actions */}
         <div style={{
           display: 'flex',
           gap: 'var(--spacing-2)',

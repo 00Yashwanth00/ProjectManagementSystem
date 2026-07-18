@@ -7,7 +7,8 @@ import java.util.UUID;
 
 public interface TaskService {
 
-    Task createTask(UUID projectId, String title, String description, String priority, UUID creatorId);
+    // ✅ Added assigneeId parameter
+    Task createTask(UUID projectId, String title, String description, String priority, UUID assigneeId, UUID creatorId);
 
     void assignTask(UUID taskId, UUID assigneeId, UUID currentUserId);
 

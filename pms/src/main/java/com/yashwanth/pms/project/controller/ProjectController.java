@@ -5,6 +5,8 @@ import com.yashwanth.pms.project.domain.Project;
 import com.yashwanth.pms.project.dto.*;
 import com.yashwanth.pms.project.service.ProjectService;
 import com.yashwanth.pms.security.UserPrincipal;
+import com.yashwanth.pms.user.domain.User;
+import com.yashwanth.pms.user.dto.UserResponse;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -159,5 +161,22 @@ public class ProjectController {
                     Map.of("error", e.getMessage())
             );
         }
+    }
+
+    @GetMapping("/{projectId}/members")
+    @PreAuthorize("isAuthenticated()")
+    public List<UserResponse> getProjectMembers(
+            @PathVariable UUID projectId,
+            Authentication authentication
+    ) {
+        UserPrincipal principal = (UserPrincipal) authentication.getPrincipal();
+
+        // ✅ Validate user has access to this project
+        projectService.validateProjectAccess(projectId, principal.getId());
+
+        List<User> members = projectService.getProjectMembers(projectId);
+        return members.stream()
+                .map(UserResponse::from)
+                .collect(Collectors.toList());
     }
 }

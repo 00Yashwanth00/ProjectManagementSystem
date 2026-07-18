@@ -10,7 +10,8 @@ const TaskCard = ({ task, onStatusChange, onAssign }) => {
   const navigate = useNavigate();
 
   const handleClick = () => {
-    navigate(`/tasks/${task.id}`);
+    // ✅ Navigate with project ID and task ID
+    navigate(`/projects/${task.projectId}/tasks/${task.id}`);
   };
 
   const getPriorityStyle = (priority) => ({

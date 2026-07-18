@@ -1,6 +1,7 @@
 package com.yashwanth.pms.project.service;
 
 import com.yashwanth.pms.project.domain.Project;
+import com.yashwanth.pms.user.domain.User;
 
 import java.util.List;
 import java.util.UUID;
@@ -29,4 +30,6 @@ public interface ProjectService {
 
     // ✅ NEW: Validate project access
     void validateProjectAccess(UUID projectId, UUID userId);
+
+    List<User> getProjectMembers(UUID projectId);
 }

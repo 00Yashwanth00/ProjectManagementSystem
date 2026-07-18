@@ -11,7 +11,6 @@ import {
 const TaskBoard = ({ tasks, onStatusChange, onAssign, loading }) => {
   const [draggedTaskId, setDraggedTaskId] = useState(null);
 
-  // Group tasks by status
   const groupedTasks = {
     [TASK_STATUS.TODO]: tasks.filter(t => t.status === TASK_STATUS.TODO),
     [TASK_STATUS.IN_PROGRESS]: tasks.filter(t => t.status === TASK_STATUS.IN_PROGRESS),
@@ -57,7 +56,6 @@ const TaskBoard = ({ tasks, onStatusChange, onAssign, loading }) => {
         onDragOver={(e) => e.preventDefault()}
         onDrop={() => handleDrop(status)}
       >
-        {/* Column Header */}
         <div style={{
           display: 'flex',
           justifyContent: 'space-between',
@@ -85,7 +83,6 @@ const TaskBoard = ({ tasks, onStatusChange, onAssign, loading }) => {
           </span>
         </div>
 
-        {/* Task List */}
         {loading ? (
           <div style={{ textAlign: 'center', padding: 'var(--spacing-4)', color: 'var(--color-gray-500)' }}>
             Loading tasks...
@@ -110,6 +107,7 @@ const TaskBoard = ({ tasks, onStatusChange, onAssign, loading }) => {
               onDragEnd={handleDragEnd}
               style={{ cursor: 'grab' }}
             >
+              {/* ✅ TaskCard receives task with projectId */}
               <TaskCard
                 task={task}
                 onStatusChange={onStatusChange}

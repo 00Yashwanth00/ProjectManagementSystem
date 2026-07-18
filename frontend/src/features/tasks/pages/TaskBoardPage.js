@@ -23,7 +23,7 @@ const TaskBoardPage = () => {
   const [error, setError] = useState(null);
   const [showCreateForm, setShowCreateForm] = useState(false);
 
-  // ✅ Role checks - simplified for ADMIN/EMPLOYEE
+  // ✅ Role checks
   const isAdmin = user?.role === 'ADMIN';
   const isProjectLeader = user?.role === 'EMPLOYEE' && project?.leader?.id === user?.id;
   const canCreateTasks = isAdmin || isProjectLeader;
@@ -39,13 +39,17 @@ const TaskBoardPage = () => {
       setLoading(true);
       setError(null);
       
-      // Fetch project details
       const projectResponse = await getProjectById(projectId);
       setProject(projectResponse.data);
       
-      // Fetch tasks
       const tasksResponse = await getTasksByProject(projectId);
-      setTasks(tasksResponse.data);
+      
+      // ✅ Add projectId to each task for navigation
+      const tasksWithProject = tasksResponse.data.map(task => ({
+        ...task,
+        projectId: projectId
+      }));
+      setTasks(tasksWithProject);
     } catch (err) {
       console.error('Failed to fetch data:', err);
       setError(err.response?.data?.message || 'Failed to load data');
@@ -57,7 +61,10 @@ const TaskBoardPage = () => {
   const handleCreateTask = async (formData) => {
     try {
       const response = await createTask(projectId, formData);
-      const newTask = response.data;
+      const newTask = {
+        ...response.data,
+        projectId: projectId  // ✅ Add projectId to new task
+      };
       setTasks(prev => [...prev, newTask]);
       setShowCreateForm(false);
       return Promise.resolve();
@@ -70,7 +77,6 @@ const TaskBoardPage = () => {
     const task = tasks.find(t => t.id === taskId);
     if (!task) return;
 
-    // ✅ Client-side validation
     if (!isTaskTransitionAllowed(task.status, newStatus)) {
       setError(`Cannot transition from ${task.status} to ${newStatus}`);
       setTimeout(() => setError(null), 3000);
@@ -91,7 +97,6 @@ const TaskBoardPage = () => {
   const handleAssignTask = async (taskId, userId) => {
     try {
       await assignTask(taskId, userId);
-      // In a real app, you'd fetch user details
       setTasks(prev => prev.map(t => 
         t.id === taskId ? { 
           ...t, 
@@ -142,14 +147,12 @@ const TaskBoardPage = () => {
         </>
       }
     >
-      {/* Error */}
       {error && (
         <div className="alert alert-danger" style={{ marginBottom: 'var(--spacing-4)' }}>
           {error}
         </div>
       )}
 
-      {/* Create Task Form */}
       {showCreateForm && (
         <CreateTaskForm
           projectId={projectId}
@@ -158,7 +161,7 @@ const TaskBoardPage = () => {
         />
       )}
 
-      {/* Task Board */}
+      {/* ✅ Pass tasks with projectId to TaskBoard */}
       <TaskBoard
         tasks={tasks}
         onStatusChange={handleStatusChange}
@@ -166,7 +169,6 @@ const TaskBoardPage = () => {
         loading={loading}
       />
 
-      {/* Empty State */}
       {!loading && tasks.length === 0 && !error && (
         <div style={{ textAlign: 'center', padding: 'var(--spacing-8)' }}>
           <p style={{ color: 'var(--color-gray-500)', marginBottom: 'var(--spacing-4)' }}>

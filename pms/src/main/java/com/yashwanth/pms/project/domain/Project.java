@@ -26,17 +26,8 @@ public class Project {
     @JoinColumn(name = "leader_id")
     private User leader;
 
-    @ManyToMany
-    @JoinTable(
-            name = "project_members",
-            joinColumns = @JoinColumn(name = "project_id"),
-            inverseJoinColumns = @JoinColumn(name = "user_id")
-    )
-    private Set<User> members = new HashSet<>();
-
-    // ❌ Removed: memberRoles map / project_member_roles table.
-    // Project-level role (PROJECT_LEADER vs TEAM_MEMBER) is NOT persisted.
-    // It is derived on read by comparing a member against `leader` — see getMemberRole().
+    @OneToMany(mappedBy = "project", cascade = CascadeType.ALL, orphanRemoval = true)
+    private Set<ProjectMember> projectMembers = new HashSet<>();
 
     protected Project() {}
 
@@ -44,7 +35,80 @@ public class Project {
         this.name = name;
         this.leader = leader;
         this.status = ProjectStatus.ACTIVE;
-        this.members.add(leader);
+    }
+
+    // ✅ Business methods for managing members with roles
+    public void addMember(User user, ProjectMemberRole role) {
+        // Remove existing member entry if exists
+        removeMember(user);
+
+        ProjectMember member = new ProjectMember(this, user, role);
+        this.projectMembers.add(member);
+
+        // If adding as PROJECT_LEADER, update the leader field
+        if (role == ProjectMemberRole.PROJECT_LEADER) {
+            this.leader = user;
+        }
+    }
+
+    public void removeMember(User user) {
+        this.projectMembers.removeIf(pm -> pm.getUser().equals(user));
+
+        // If removing the leader, clear leader field
+        if (this.leader != null && this.leader.equals(user)) {
+            this.leader = null;
+        }
+    }
+
+    public void updateMemberRole(User user, ProjectMemberRole newRole) {
+        ProjectMember member = projectMembers.stream()
+                .filter(pm -> pm.getUser().equals(user))
+                .findFirst()
+                .orElseThrow(() -> new IllegalStateException("User is not a member of this project"));
+
+        // If changing to PROJECT_LEADER, demote existing leader
+        if (newRole == ProjectMemberRole.PROJECT_LEADER) {
+            // Demote current leader to TEAM_MEMBER
+            projectMembers.stream()
+                    .filter(pm -> pm.getRole() == ProjectMemberRole.PROJECT_LEADER)
+                    .forEach(pm -> pm.setRole(ProjectMemberRole.TEAM_MEMBER));
+
+            this.leader = user;
+        } else if (member.getRole() == ProjectMemberRole.PROJECT_LEADER &&
+                newRole == ProjectMemberRole.TEAM_MEMBER) {
+            // If demoting leader, clear leader field
+            this.leader = null;
+        }
+
+        member.setRole(newRole);
+    }
+
+    public ProjectMemberRole getMemberRole(User user) {
+        return projectMembers.stream()
+                .filter(pm -> pm.getUser().equals(user))
+                .map(ProjectMember::getRole)
+                .findFirst()
+                .orElse(null);
+    }
+
+    public boolean isLeader(User user) {
+        return this.leader != null && this.leader.equals(user);
+    }
+
+    public boolean isMember(User user) {
+        return projectMembers.stream().anyMatch(pm -> pm.getUser().equals(user));
+    }
+
+    public Set<User> getMembers() {
+        Set<User> users = new HashSet<>();
+        for (ProjectMember pm : projectMembers) {
+            users.add(pm.getUser());
+        }
+        return users;
+    }
+
+    public Set<ProjectMember> getProjectMembers() {
+        return projectMembers;
     }
 
     // Getters and Setters
@@ -54,38 +118,4 @@ public class Project {
     public void setStatus(ProjectStatus status) { this.status = status; }
     public User getLeader() { return leader; }
     public void setLeader(User leader) { this.leader = leader; }
-    public Set<User> getMembers() { return members; }
-
-    // Business methods
-    public void addMember(User user) {
-        this.members.add(user);
-    }
-
-    public void removeMember(User user) {
-        this.members.remove(user);
-    }
-
-    /**
-     * Derives this user's role WITHIN THIS PROJECT.
-     * Not stored anywhere — purely a function of (leader, members) at read time.
-     * A user is only ever "PROJECT_LEADER" while they equal project.leader;
-     * the moment the leader changes, the old leader is automatically "TEAM_MEMBER"
-     * again with no write required.
-     */
-    public String getMemberRole(User user) {
-        if (user == null) return "NONE";
-        if (isLeader(user)) return "PROJECT_LEADER";
-        if (isMember(user)) return "TEAM_MEMBER";
-        return "NONE";
-    }
-
-    public boolean isLeader(User user) {
-        if (user == null || leader == null) return false;
-        return leader.getId().equals(user.getId());
-    }
-
-    public boolean isMember(User user) {
-        if (user == null) return false;
-        return members.contains(user);
-    }
 }

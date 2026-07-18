@@ -18,6 +18,7 @@ import UserProfilePage from '../../features/users/pages/UserProfilePage';
 import ProjectListPage from '../../features/projects/pages/ProjectListPage';
 import ProjectDetailsPage from '../../features/projects/pages/ProjectDetailsPage';
 
+// Task Pages
 import TaskBoardPage from '../../features/tasks/pages/TaskBoardPage';
 import TaskDetailsPage from '../../features/tasks/pages/TaskDetailsPage';
 
@@ -31,7 +32,6 @@ const AppRoutes = () => {
           {/* Public Routes */}
           <Route path="/login" element={<LoginPage />} />
           
-          {/* ✅ Register is now ADMIN-only */}
           <Route path="/register" element={
             <ProtectedRoute>
               <RoleBasedRoute allowedRoles={['ADMIN']}>
@@ -66,6 +66,7 @@ const AppRoutes = () => {
             </ProtectedRoute>
           } />
           
+          {/* Task Routes - Nested under project */}
           <Route path="/projects/:projectId/tasks" element={
             <ProtectedRoute>
               <MainLayout>
@@ -74,7 +75,8 @@ const AppRoutes = () => {
             </ProtectedRoute>
           } />
           
-          <Route path="/tasks/:taskId" element={
+          {/* ✅ Task Details with project context */}
+          <Route path="/projects/:projectId/tasks/:taskId" element={
             <ProtectedRoute>
               <MainLayout>
                 <TaskDetailsPage />

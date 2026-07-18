@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
-import UserSelect from '../../users/components/UserSelect';
+import ProjectMemberSelect from '../../users/components/ProjectMemberSelect';
 
-const AssignTaskForm = ({ task, onAssign, onCancel }) => {
+const AssignTaskForm = ({ task, projectId, onAssign, onCancel }) => {
   const [selectedUserId, setSelectedUserId] = useState(task?.assignee?.id || '');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -11,7 +11,7 @@ const AssignTaskForm = ({ task, onAssign, onCancel }) => {
     setError(null);
 
     if (!selectedUserId) {
-      setError('Please select a user to assign');
+      setError('Please select a team member to assign');
       return;
     }
 
@@ -42,11 +42,12 @@ const AssignTaskForm = ({ task, onAssign, onCancel }) => {
       )}
 
       <form onSubmit={handleSubmit}>
-        <UserSelect
-          label="Select User"
+        <ProjectMemberSelect
+          projectId={projectId}
+          label="Select Team Member"
           value={selectedUserId}
           onChange={setSelectedUserId}
-          placeholder="Search users..."
+          placeholder="Search team members..."
           disabled={loading}
           required
         />

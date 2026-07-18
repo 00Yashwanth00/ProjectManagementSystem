@@ -10,7 +10,6 @@ export const createProject = async (projectData) => {
 
 /**
  * Get all projects (ADMIN sees all, others see only their projects)
- * The backend should handle this filtering based on the authenticated user
  */
 export const getAllProjects = async () => {
   const response = await axiosInstance.get('/projects');
@@ -54,5 +53,11 @@ export const removeProjectMember = async (projectId, userId) => {
  */
 export const updateProjectLeader = async (projectId, leaderId) => {
   const response = await axiosInstance.patch(`/projects/${projectId}/leader`, { leaderId });
+  return response;
+};
+
+// ✅ NEW: Get project members for task assignment
+export const getProjectMembers = async (projectId) => {
+  const response = await axiosInstance.get(`/projects/${projectId}/members`);
   return response;
 };

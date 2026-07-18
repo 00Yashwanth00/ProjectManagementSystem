@@ -10,7 +10,7 @@ import java.util.UUID;
 
 public interface ProjectRepository extends JpaRepository<Project, UUID> {
 
-    @Query("SELECT p FROM Project p JOIN p.members m WHERE m.id = :userId")
+    @Query("SELECT p FROM Project p JOIN p.projectMembers pm WHERE pm.user.id = :userId")
     List<Project> findProjectsByMemberId(@Param("userId") UUID userId);
 
     @Query("SELECT p FROM Project p WHERE p.leader.id = :userId")

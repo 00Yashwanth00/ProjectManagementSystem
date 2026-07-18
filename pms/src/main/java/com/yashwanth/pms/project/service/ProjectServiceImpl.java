@@ -5,7 +5,10 @@ import com.yashwanth.pms.common.exception.BusinessException;
 import com.yashwanth.pms.common.exception.ResourceNotFoundException;
 import com.yashwanth.pms.events.ProjectMemberAddedEvent;
 import com.yashwanth.pms.project.domain.Project;
+import com.yashwanth.pms.project.domain.ProjectMember;
+import com.yashwanth.pms.project.domain.ProjectMemberRole;
 import com.yashwanth.pms.project.domain.ProjectStatus;
+import com.yashwanth.pms.project.repository.ProjectMemberRepository;
 import com.yashwanth.pms.project.repository.ProjectRepository;
 import com.yashwanth.pms.user.domain.Role;
 import com.yashwanth.pms.user.domain.User;
@@ -19,6 +22,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Service
 public class ProjectServiceImpl implements ProjectService {
@@ -27,13 +31,16 @@ public class ProjectServiceImpl implements ProjectService {
     private static final int MAX_PROJECTS_LEAD = 3;
 
     private final ProjectRepository projectRepository;
+    private final ProjectMemberRepository projectMemberRepository;
     private final UserService userService;
     private final ApplicationEventPublisher publisher;
 
     public ProjectServiceImpl(ProjectRepository projectRepository,
+                              ProjectMemberRepository projectMemberRepository,
                               UserService userService,
                               ApplicationEventPublisher publisher) {
         this.projectRepository = projectRepository;
+        this.projectMemberRepository = projectMemberRepository;
         this.userService = userService;
         this.publisher = publisher;
     }
@@ -41,7 +48,6 @@ public class ProjectServiceImpl implements ProjectService {
     @Override
     @Transactional
     public Project createProject(String name, UUID leaderId, UUID currentUserId) {
-        // ✅ Only ADMIN can create projects
         User admin = userService.getById(currentUserId);
         if (admin.getRole() != Role.ADMIN) {
             throw new AccessDeniedException("Only admin can create projects");
@@ -49,12 +55,10 @@ public class ProjectServiceImpl implements ProjectService {
 
         User leader = userService.getById(leaderId);
 
-        // ✅ Prevent ADMIN from being assigned as project leader
         if (leader.getRole() == Role.ADMIN) {
             throw new BusinessException("Admin users cannot be assigned as project leaders");
         }
 
-        // ✅ Check if user is already leading 3 projects
         long currentProjectsLed = projectRepository.countProjectsLedByUser(leaderId);
         if (currentProjectsLed >= MAX_PROJECTS_LEAD) {
             throw new BusinessException(
@@ -64,7 +68,13 @@ public class ProjectServiceImpl implements ProjectService {
         }
 
         Project project = new Project(name, leader);
-        return projectRepository.save(project);
+        project = projectRepository.save(project);
+
+        // ✅ Add leader as PROJECT_LEADER in project_members
+        project.addMember(leader, ProjectMemberRole.PROJECT_LEADER);
+        project = projectRepository.save(project);
+
+        return project;
     }
 
     @Override
@@ -81,7 +91,6 @@ public class ProjectServiceImpl implements ProjectService {
             throw new BusinessException("Project is not active");
         }
 
-        // ✅ CHANGED: Only ADMIN can add members (removed PROJECT_LEADER access)
         User currentUser = userService.getById(currentUserId);
         if (currentUser.getRole() != Role.ADMIN) {
             throw new AccessDeniedException("Only ADMIN can add members to projects");
@@ -92,18 +101,18 @@ public class ProjectServiceImpl implements ProjectService {
             try {
                 User userToAdd = userService.getById(userId);
 
-                // ✅ Prevent ADMIN from being added as member
                 if (userToAdd.getRole() == Role.ADMIN) {
                     logger.warn("Cannot add ADMIN user {} to project", userToAdd.getEmail());
                     continue;
                 }
 
-                if (project.getMembers().contains(userToAdd)) {
+                if (project.isMember(userToAdd)) {
                     logger.info("User {} is already a member of project {}", userToAdd.getEmail(), project.getName());
                     continue;
                 }
 
-                project.addMember(userToAdd);
+                // ✅ Add as TEAM_MEMBER by default
+                project.addMember(userToAdd, ProjectMemberRole.TEAM_MEMBER);
                 addedUsers.add(userToAdd.getName());
 
             } catch (Exception e) {
@@ -117,7 +126,6 @@ public class ProjectServiceImpl implements ProjectService {
 
         projectRepository.save(project);
 
-        // Publish event
         List<UUID> members = project.getMembers().stream()
                 .map(User::getId)
                 .toList();
@@ -142,7 +150,6 @@ public class ProjectServiceImpl implements ProjectService {
             throw new BusinessException("Project is not active");
         }
 
-        // ✅ CHANGED: Only ADMIN can remove members (removed PROJECT_LEADER access)
         User currentUser = userService.getById(currentUserId);
         if (currentUser.getRole() != Role.ADMIN) {
             throw new AccessDeniedException("Only ADMIN can remove members from projects");
@@ -150,9 +157,10 @@ public class ProjectServiceImpl implements ProjectService {
 
         User userToRemove = userService.getById(userId);
 
-        // ❌ Cannot remove project leader
-        if (userToRemove.equals(project.getLeader())) {
-            throw new BusinessException("Cannot remove project leader");
+        // ✅ Check if user is PROJECT_LEADER
+        ProjectMemberRole role = project.getMemberRole(userToRemove);
+        if (role == ProjectMemberRole.PROJECT_LEADER) {
+            throw new BusinessException("Cannot remove project leader. Demote the leader first.");
         }
 
         project.removeMember(userToRemove);
@@ -190,12 +198,10 @@ public class ProjectServiceImpl implements ProjectService {
 
         User newLeader = userService.getById(leaderId);
 
-        // ✅ Prevent ADMIN from being assigned as project leader
         if (newLeader.getRole() == Role.ADMIN) {
             throw new BusinessException("Admin users cannot be assigned as project leaders");
         }
 
-        // ✅ Check if user is already leading 3 projects
         long currentProjectsLed = projectRepository.countProjectsLedByUser(leaderId);
         if (currentProjectsLed >= MAX_PROJECTS_LEAD) {
             throw new BusinessException(
@@ -204,20 +210,12 @@ public class ProjectServiceImpl implements ProjectService {
             );
         }
 
-        User oldLeader = project.getLeader();
-        project.setLeader(newLeader);
-
-        // ✅ Ensure new leader is in members list
-        if (!project.getMembers().contains(newLeader)) {
-            project.addMember(newLeader);
-        }
+        // ✅ Demote current leader to TEAM_MEMBER, promote new leader
+        project.updateMemberRole(newLeader, ProjectMemberRole.PROJECT_LEADER);
 
         Project updatedProject = projectRepository.save(project);
-        logger.info("Project leader updated for project {} from {} to {}",
-                project.getName(),
-                oldLeader != null ? oldLeader.getEmail() : "none",
-                newLeader.getEmail()
-        );
+        logger.info("Project leader updated for project {} to {}",
+                project.getName(), newLeader.getEmail());
 
         return updatedProject;
     }
@@ -230,24 +228,20 @@ public class ProjectServiceImpl implements ProjectService {
 
         User currentUser = userService.getById(currentUserId);
 
-        // ✅ CHANGED: Only ADMIN can promote members to leader (removed PROJECT_LEADER access)
         if (currentUser.getRole() != Role.ADMIN) {
             throw new AccessDeniedException("Only ADMIN can promote members to project leader");
         }
 
         User userToPromote = userService.getById(userId);
 
-        // ✅ Prevent ADMIN from being promoted to leader
         if (userToPromote.getRole() == Role.ADMIN) {
             throw new BusinessException("Admin users cannot be promoted to project leader");
         }
 
-        // Check if user is a member
-        if (!project.getMembers().contains(userToPromote)) {
+        if (!project.isMember(userToPromote)) {
             throw new BusinessException("User is not a member of this project");
         }
 
-        // ✅ Check if user is already leading 3 projects
         long currentProjectsLed = projectRepository.countProjectsLedByUser(userId);
         if (currentProjectsLed >= MAX_PROJECTS_LEAD) {
             throw new BusinessException(
@@ -256,8 +250,8 @@ public class ProjectServiceImpl implements ProjectService {
             );
         }
 
-        User oldLeader = project.getLeader();
-        project.setLeader(userToPromote);
+        // ✅ Promote to PROJECT_LEADER (demotes current leader automatically)
+        project.updateMemberRole(userToPromote, ProjectMemberRole.PROJECT_LEADER);
 
         projectRepository.save(project);
         logger.info("User {} promoted to leader of project {} by {}",
@@ -272,19 +266,19 @@ public class ProjectServiceImpl implements ProjectService {
 
         User currentUser = userService.getById(currentUserId);
 
-        // Only ADMIN can demote
         if (currentUser.getRole() != Role.ADMIN) {
             throw new AccessDeniedException("Only ADMIN can demote project leaders");
         }
 
         User userToDemote = userService.getById(userId);
 
-        // Check if user is the leader
-        if (!userToDemote.equals(project.getLeader())) {
+        ProjectMemberRole role = project.getMemberRole(userToDemote);
+        if (role != ProjectMemberRole.PROJECT_LEADER) {
             throw new BusinessException("User is not the leader of this project");
         }
 
-        project.setLeader(null);
+        // ✅ Demote to TEAM_MEMBER
+        project.updateMemberRole(userToDemote, ProjectMemberRole.TEAM_MEMBER);
 
         projectRepository.save(project);
         logger.info("User {} demoted from leader of project {} by {}",
@@ -296,26 +290,22 @@ public class ProjectServiceImpl implements ProjectService {
         Project project = getById(projectId);
         User user = userService.getById(userId);
 
-        // ✅ ADMIN can access any project
         if (user.getRole() == Role.ADMIN) {
             return;
         }
 
-        // ✅ Check if user is the project leader
-        if (project.getLeader() != null && project.getLeader().getId().equals(userId)) {
-            return;
-        }
-
-        // ✅ Check if user is a team member
-        boolean isMember = project.getMembers().stream()
-                .anyMatch(m -> m.getId().equals(userId));
-
-        if (isMember) {
+        if (project.isLeader(user) || project.isMember(user)) {
             return;
         }
 
         throw new AccessDeniedException("You are not authorized to view this project");
     }
 
-    // ❌ REMOVED: authorize() method - no longer needed
+    @Override
+    public List<User> getProjectMembers(UUID projectId) {
+        Project project = getById(projectId);
+        return project.getProjectMembers().stream()
+                .map(ProjectMember::getUser)
+                .collect(Collectors.toList());
+    }
 }
