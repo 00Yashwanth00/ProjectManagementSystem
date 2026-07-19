@@ -18,6 +18,8 @@ public class CreateIssueRequest {
 
     private UUID taskId;
 
+    private UUID assigneeId;
+
 
     public String getTitle() {
         return title;
@@ -57,5 +59,13 @@ public class CreateIssueRequest {
 
     public void setTaskId(UUID taskId) {
         this.taskId = taskId;
+    }
+
+    public UUID getAssigneeId() {
+        return assigneeId;
+    }
+
+    public void setAssigneeId(UUID assigneeId) {
+        this.assigneeId = assigneeId;
     }
 }

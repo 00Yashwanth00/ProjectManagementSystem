@@ -66,7 +66,8 @@ class IssueServiceTest {
                 "Bug desc",
                 "BUG",
                 "HIGH",
-                reporterId
+                reporterId,
+                UUID.randomUUID()
         );
 
         assertEquals(IssueStatus.OPEN, issue.getStatus());
@@ -88,7 +89,8 @@ class IssueServiceTest {
                 "Desc",
                 "BUG",
                 "LOW",
-                reporterId
+                reporterId,
+                UUID.randomUUID()
         ));
     }
 
@@ -137,7 +139,8 @@ class IssueServiceTest {
                 IssuePriority.HIGH,
                 new Project("P", reporter),
                 null,
-                reporter
+                reporter,
+                new User("Assignee", "user@gmail.com", "123456")
         );
     }
 

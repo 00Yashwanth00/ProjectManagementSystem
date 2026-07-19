@@ -1,4 +1,6 @@
-import React from 'react';
+// frontend/src/features/tasks/components/TaskCard.js
+
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   TASK_STATUS_LABELS,
@@ -8,10 +10,16 @@ import {
 
 const TaskCard = ({ task, onStatusChange, onAssign }) => {
   const navigate = useNavigate();
+  const [showReportIssue, setShowReportIssue] = useState(false);
 
   const handleClick = () => {
-    // ✅ Navigate with project ID and task ID
     navigate(`/projects/${task.projectId}/tasks/${task.id}`);
+  };
+
+  const handleReportIssue = (e) => {
+    e.stopPropagation();
+    // Navigate to task details with report issue flag
+    navigate(`/projects/${task.projectId}/tasks/${task.id}?reportIssue=true`);
   };
 
   const getPriorityStyle = (priority) => ({
@@ -28,6 +36,7 @@ const TaskCard = ({ task, onStatusChange, onAssign }) => {
         transition: 'transform var(--transition-fast), box-shadow var(--transition-fast)',
         padding: 'var(--spacing-3)',
         marginBottom: 'var(--spacing-2)',
+        position: 'relative',
       }}
       onClick={handleClick}
       onMouseEnter={(e) => {
@@ -89,16 +98,38 @@ const TaskCard = ({ task, onStatusChange, onAssign }) => {
           )}
         </div>
         
-        {/* Status badge */}
-        <span style={{
-          backgroundColor: 'var(--color-gray-100)',
-          padding: 'var(--spacing-1) var(--spacing-2)',
-          borderRadius: 'var(--border-radius-full)',
-          fontSize: 'var(--font-size-xs)',
-          color: 'var(--color-gray-600)',
-        }}>
-          {TASK_STATUS_LABELS[task.status]}
-        </span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-2)' }}>
+          {/* Status badge */}
+          <span style={{
+            backgroundColor: 'var(--color-gray-100)',
+            padding: 'var(--spacing-1) var(--spacing-2)',
+            borderRadius: 'var(--border-radius-full)',
+            fontSize: 'var(--font-size-xs)',
+            color: 'var(--color-gray-600)',
+          }}>
+            {TASK_STATUS_LABELS[task.status]}
+          </span>
+          
+          {/* ✅ Report Issue quick button - only on hover */}
+          <button
+            onClick={handleReportIssue}
+            style={{
+              backgroundColor: 'var(--color-danger)',
+              color: 'var(--color-white)',
+              border: 'none',
+              borderRadius: 'var(--border-radius-full)',
+              padding: 'var(--spacing-1) var(--spacing-2)',
+              fontSize: 'var(--font-size-xs)',
+              cursor: 'pointer',
+              opacity: 0.7,
+              transition: 'opacity var(--transition-fast)',
+            }}
+            onMouseEnter={(e) => e.target.style.opacity = '1'}
+            onMouseLeave={(e) => e.target.style.opacity = '0.7'}
+          >
+            🐛 Report
+          </button>
+        </div>
       </div>
     </div>
   );

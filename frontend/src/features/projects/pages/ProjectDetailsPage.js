@@ -99,11 +99,24 @@ const ProjectDetailsPage = () => {
       subtitle={project ? `Status: ${project.status}` : 'Loading...'}
       actions={
         <>
+          {/* ✅ View Issues Button */}
+          {project && (
+            <button
+              className="btn btn-primary"
+              onClick={() => navigate(`/projects/${projectId}/issues`)}
+              disabled={loading}
+              style={{ marginRight: 'var(--spacing-2)' }}
+            >
+              🐛 View Issues
+            </button>
+          )}
+          {/* View Tasks Button */}
           {project && (
             <button
               className="btn btn-primary"
               onClick={() => navigate(`/projects/${projectId}/tasks`)}
               disabled={loading}
+              style={{ marginRight: 'var(--spacing-2)' }}
             >
               📋 View Tasks
             </button>

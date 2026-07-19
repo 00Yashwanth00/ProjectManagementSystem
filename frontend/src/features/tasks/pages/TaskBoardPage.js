@@ -8,6 +8,7 @@ import {
   createTask,
   updateTaskStatus,
   assignTask,
+  getTaskById
 } from '../../../api/taskApi/taskApi';
 import { getProjectById } from '../../../api/projectApi/projectApi';
 import { useAuth } from '../../../context/AuthContext/AuthContext';
@@ -23,7 +24,6 @@ const TaskBoardPage = () => {
   const [error, setError] = useState(null);
   const [showCreateForm, setShowCreateForm] = useState(false);
 
-  // ✅ Role checks
   const isAdmin = user?.role === 'ADMIN';
   const isProjectLeader = user?.role === 'EMPLOYEE' && project?.leader?.id === user?.id;
   const canCreateTasks = isAdmin || isProjectLeader;
@@ -44,7 +44,6 @@ const TaskBoardPage = () => {
       
       const tasksResponse = await getTasksByProject(projectId);
       
-      // ✅ Add projectId to each task for navigation
       const tasksWithProject = tasksResponse.data.map(task => ({
         ...task,
         projectId: projectId
@@ -63,7 +62,7 @@ const TaskBoardPage = () => {
       const response = await createTask(projectId, formData);
       const newTask = {
         ...response.data,
-        projectId: projectId  // ✅ Add projectId to new task
+        projectId: projectId
       };
       setTasks(prev => [...prev, newTask]);
       setShowCreateForm(false);
@@ -73,10 +72,12 @@ const TaskBoardPage = () => {
     }
   };
 
+  // ✅ Fixed: handleStatusChange takes taskId and newStatus
   const handleStatusChange = async (taskId, newStatus) => {
     const task = tasks.find(t => t.id === taskId);
     if (!task) return;
 
+    // ✅ Validate transition
     if (!isTaskTransitionAllowed(task.status, newStatus)) {
       setError(`Cannot transition from ${task.status} to ${newStatus}`);
       setTimeout(() => setError(null), 3000);
@@ -84,7 +85,8 @@ const TaskBoardPage = () => {
     }
 
     try {
-      await updateTaskStatus(taskId, newStatus);
+      // ✅ Correct API call: projectId, taskId, newStatus
+      await updateTaskStatus(projectId, taskId, newStatus);
       setTasks(prev => prev.map(t => 
         t.id === taskId ? { ...t, status: newStatus } : t
       ));
@@ -96,12 +98,11 @@ const TaskBoardPage = () => {
 
   const handleAssignTask = async (taskId, userId) => {
     try {
-      await assignTask(taskId, userId);
+      await assignTask(projectId, taskId, userId);
+      // Fetch updated task to get assignee details
+      const response = await getTaskById(projectId, taskId);
       setTasks(prev => prev.map(t => 
-        t.id === taskId ? { 
-          ...t, 
-          assignee: { id: userId, name: 'Assigned User' } 
-        } : t
+        t.id === taskId ? { ...response.data, projectId: projectId } : t
       ));
     } catch (err) {
       setError(err.response?.data?.message || 'Failed to assign task');
@@ -122,7 +123,15 @@ const TaskBoardPage = () => {
       title="Task Board"
       subtitle={project ? `${tasks.length} tasks in ${project.name}` : 'Loading...'}
       actions={
-        <>
+        <> 
+          <button
+            className="btn btn-primary"
+            onClick={() => navigate(`/projects/${projectId}/issues`)}
+            disabled={loading}
+            style={{ marginRight: 'var(--spacing-2)' }}
+          >
+            🐛 View Issues
+          </button>
           {canCreateTasks && (
             <button
               className="btn btn-primary"
@@ -161,7 +170,6 @@ const TaskBoardPage = () => {
         />
       )}
 
-      {/* ✅ Pass tasks with projectId to TaskBoard */}
       <TaskBoard
         tasks={tasks}
         onStatusChange={handleStatusChange}

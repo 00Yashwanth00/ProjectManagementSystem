@@ -10,19 +10,17 @@ export const createTask = async (projectId, taskData) => {
   return response;
 };
 
-// ✅ Get task by ID with project context
 export const getTaskById = async (projectId, taskId) => {
   const response = await axiosInstance.get(`/projects/${projectId}/tasks/${taskId}`);
   return response;
 };
 
-// ✅ Assign task with project context
 export const assignTask = async (projectId, taskId, userId) => {
   const response = await axiosInstance.post(`/projects/${projectId}/tasks/${taskId}/assign/${userId}`);
   return response;
 };
 
-// ✅ Update task status with project context
+// ✅ Correct: PATCH /api/projects/{projectId}/tasks/{taskId}/status
 export const updateTaskStatus = async (projectId, taskId, status) => {
   const response = await axiosInstance.patch(`/projects/${projectId}/tasks/${taskId}/status`, { status });
   return response;

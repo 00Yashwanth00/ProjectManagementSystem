@@ -68,7 +68,7 @@ class IssueControllerTest {
 
         when(issueService.createIssue(
                 any(), any(), anyString(), anyString(),
-                anyString(), anyString(), any()))
+                anyString(), anyString(), any(), any()))
                 .thenReturn(dummyIssue());
 
         mockMvc.perform(post("/api/projects/{projectId}/issues", projectId)
@@ -181,6 +181,8 @@ class IssueControllerTest {
                 project.getLeader()
         );
 
+        User assignee = new User("Assignee", "user@gmail.com", "123456");
+
         return new Issue(
                 "Issue",
                 "Desc",
@@ -188,7 +190,8 @@ class IssueControllerTest {
                 IssuePriority.HIGH,
                 project,
                 task,
-                reporter
+                reporter,
+                assignee
         );
     }
 }

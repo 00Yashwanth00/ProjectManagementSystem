@@ -1,128 +1,92 @@
-// frontend/src/features/tasks/pages/TaskDetailsPage.js
+// frontend/src/features/issues/pages/IssueDetailsPage.js
 
 import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate, useLocation } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import PageWrapper from '../../../components/layout/PageWrapper';
-import AssignTaskForm from '../components/AssignTaskForm';
-import CreateIssueForm from '../../issues/components/CreateIssueForm';
+import ProjectMemberSelect from '../../users/components/ProjectMemberSelect';
 import {
-  getTaskById,
-  updateTaskStatus,
-  assignTask,
-} from '../../../api/taskApi/taskApi';
+  getIssueById,
+  updateIssueStatus,
+  assignIssue,
+} from '../../../api/issueApi/issueApi';
 import { getProjectById } from '../../../api/projectApi/projectApi';
-import { createIssue } from '../../../api/issueApi/issueApi';
 import { useAuth } from '../../../context/AuthContext/AuthContext';
 import {
-  TASK_STATUS_LABELS,
-  TASK_PRIORITY_LABELS,
-  TASK_PRIORITY_COLORS,
-  TASK_STATUS_COLORS,
-  isTaskTransitionAllowed,
-  TASK_STATUS,
-} from '../../../utils/constants/taskConstants';
+  ISSUE_STATUS_LABELS,
+  ISSUE_PRIORITY_LABELS,
+  ISSUE_PRIORITY_COLORS,
+  ISSUE_STATUS_COLORS,
+  ISSUE_TYPE_LABELS,
+  isIssueTransitionAllowed,
+  ISSUE_STATUS,
+} from '../../../utils/constants/issueConstants';
 
-const TaskDetailsPage = () => {
-  const { projectId, taskId } = useParams();
+const IssueDetailsPage = () => {
+  const { projectId, issueId } = useParams();
   const navigate = useNavigate();
-  const location = useLocation();
   const { user } = useAuth();
-  const [task, setTask] = useState(null);
+  const [issue, setIssue] = useState(null);
   const [project, setProject] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [successMessage, setSuccessMessage] = useState(null);
   const [showAssignForm, setShowAssignForm] = useState(false);
-  const [showIssueForm, setShowIssueForm] = useState(false);
+  const [selectedUserId, setSelectedUserId] = useState('');
+  const [assigning, setAssigning] = useState(false);
   const [updating, setUpdating] = useState(false);
 
+  // ✅ Role checks
   const isAdmin = user?.role === 'ADMIN';
   const isProjectLeader = project?.leader?.id === user?.id;
-  const isAssignee = task?.assignee?.id === user?.id;
-  const canAssign = isAdmin || isProjectLeader;
-  const canUpdateStatus = isAdmin || isProjectLeader || isAssignee;
-  
-  // ✅ Anyone who can view the task (is a project member) can report an issue
-  // But ADMIN cannot create issues
-  const canReportIssue = !isAdmin && (isProjectLeader || isAssignee);
+  const isAssignee = issue?.assignee?.id === user?.id;
+  const isTeamMember = project?.members?.some(m => m.user?.id === user?.id);
 
-  // ✅ Auto-open issue form if URL has reportIssue=true parameter
-  useEffect(() => {
-    const params = new URLSearchParams(location.search);
-    if (params.get('reportIssue') === 'true' && canReportIssue) {
-      setShowIssueForm(true);
-      // Clean up URL parameter
-      navigate(`/projects/${projectId}/tasks/${taskId}`, { replace: true });
-    }
-  }, [location, canReportIssue, projectId, taskId, navigate]);
+  // ✅ Permissions
+  const canAssign = isProjectLeader; // Only PROJECT_LEADER can assign
+  const canUpdateStatus = isAdmin || isProjectLeader || isAssignee; // ADMIN, PROJECT_LEADER, or ASSIGNEE
 
   useEffect(() => {
-    if (taskId && projectId) {
-      fetchTaskAndProject();
+    if (issueId && projectId) {
+      fetchIssueAndProject();
     }
-  }, [taskId, projectId]);
+  }, [issueId, projectId]);
 
-  const fetchTaskAndProject = async () => {
+  const fetchIssueAndProject = async () => {
     try {
       setLoading(true);
       setError(null);
-      setSuccessMessage(null);
       
-      const [taskResponse, projectResponse] = await Promise.all([
-        getTaskById(projectId, taskId),
+      const [issueResponse, projectResponse] = await Promise.all([
+        getIssueById(projectId, issueId),
         getProjectById(projectId)
       ]);
       
-      setTask({ ...taskResponse.data, projectId: projectId });
+      setIssue({ ...issueResponse.data, projectId: projectId });
       setProject(projectResponse.data);
     } catch (err) {
       console.error('Failed to fetch data:', err);
       if (err.response?.status === 404) {
-        setError('Task or Project not found');
+        setError('Issue or Project not found');
       } else {
-        setError(err.response?.data?.message || 'Failed to load task details');
+        setError(err.response?.data?.message || 'Failed to load issue details');
       }
     } finally {
       setLoading(false);
     }
   };
 
-  // ✅ Handle issue creation from task
-  const handleCreateIssueFromTask = async (formData) => {
-    try {
-      // ✅ Ensure taskId is set to current task
-      const issueData = {
-        ...formData,
-        taskId: taskId  // ✅ Fixed to current task
-      };
-      
-      await createIssue(projectId, issueData);
-      setShowIssueForm(false);
-      setSuccessMessage('✅ Issue reported successfully!');
-      setTimeout(() => setSuccessMessage(null), 5000);
-      return Promise.resolve();
-    } catch (err) {
-      setError(err.response?.data?.message || 'Failed to report issue');
-      setTimeout(() => setError(null), 5000);
-      return Promise.reject(err);
-    }
-  };
-
   const handleStatusChange = async (newStatus) => {
-    if (!task) return;
+    if (!issue) return;
 
-    if (!isTaskTransitionAllowed(task.status, newStatus)) {
-      setError(`Cannot transition from ${task.status} to ${newStatus}`);
+    if (!isIssueTransitionAllowed(issue.status, newStatus)) {
+      setError(`Cannot transition from ${issue.status} to ${newStatus}`);
       setTimeout(() => setError(null), 3000);
       return;
     }
 
     try {
       setUpdating(true);
-      await updateTaskStatus(projectId, taskId, newStatus);
-      setTask(prev => ({ ...prev, status: newStatus }));
-      setSuccessMessage(`✅ Status updated to ${TASK_STATUS_LABELS[newStatus]}`);
-      setTimeout(() => setSuccessMessage(null), 3000);
+      await updateIssueStatus(projectId, issueId, newStatus);
+      setIssue(prev => ({ ...prev, status: newStatus }));
     } catch (err) {
       setError(err.response?.data?.message || 'Failed to update status');
       setTimeout(() => setError(null), 3000);
@@ -131,30 +95,38 @@ const TaskDetailsPage = () => {
     }
   };
 
-  const handleAssign = async (userId) => {
+  const handleAssign = async () => {
+    if (!selectedUserId) {
+      setError('Please select a team member to assign');
+      return;
+    }
+
     try {
-      await assignTask(projectId, taskId, userId);
-      const response = await getTaskById(projectId, taskId);
-      setTask({ ...response.data, projectId: projectId });
+      setAssigning(true);
+      setError(null);
+      await assignIssue(projectId, issueId, selectedUserId);
+      const response = await getIssueById(projectId, issueId);
+      setIssue({ ...response.data, projectId: projectId });
       setShowAssignForm(false);
-      setSuccessMessage('✅ Task assigned successfully!');
-      setTimeout(() => setSuccessMessage(null), 3000);
+      setSelectedUserId('');
     } catch (err) {
-      setError(err.response?.data?.message || 'Failed to assign task');
+      setError(err.response?.data?.message || 'Failed to assign issue');
       setTimeout(() => setError(null), 3000);
+    } finally {
+      setAssigning(false);
     }
   };
 
   const handleRefresh = () => {
-    fetchTaskAndProject();
+    fetchIssueAndProject();
   };
 
   const handleBack = () => {
-    navigate(`/projects/${projectId}/tasks`);
+    navigate(`/projects/${projectId}/issues`);
   };
 
   const getStatusBadge = (status) => ({
-    backgroundColor: TASK_STATUS_COLORS[status] || 'var(--color-gray-400)',
+    backgroundColor: ISSUE_STATUS_COLORS[status] || 'var(--color-gray-400)',
     color: 'var(--color-white)',
     padding: 'var(--spacing-1) var(--spacing-3)',
     borderRadius: 'var(--border-radius-full)',
@@ -164,51 +136,36 @@ const TaskDetailsPage = () => {
   });
 
   const getPriorityStyle = (priority) => ({
-    color: TASK_PRIORITY_COLORS[priority],
+    color: ISSUE_PRIORITY_COLORS[priority],
     fontWeight: 'var(--font-weight-semibold)',
     fontSize: 'var(--font-size-base)',
   });
 
   const getAssigneeColor = () => {
-    if (!task?.assignee) return 'var(--color-gray-400)';
-    return task.assignee.role === 'ADMIN' ? 'var(--color-danger)' : 'var(--color-primary)';
+    if (!issue?.assignee) return 'var(--color-gray-400)';
+    return issue.assignee.role === 'ADMIN' ? 'var(--color-danger)' : 'var(--color-primary)';
   };
 
   const getAssigneeInitial = () => {
-    if (!task?.assignee) return '?';
-    return task.assignee.name?.charAt(0)?.toUpperCase() || '?';
+    if (!issue?.assignee) return '?';
+    return issue.assignee.name?.charAt(0)?.toUpperCase() || '?';
   };
 
+  // ✅ Get user's role display
   const getUserRoleDisplay = () => {
     if (isAdmin) return 'Admin';
     if (isProjectLeader) return 'Project Leader';
     if (isAssignee) return 'Assignee';
+    if (isTeamMember) return 'Team Member';
     return 'Viewer';
   };
 
   return (
     <PageWrapper
-      title={task?.title || 'Task Details'}
-      subtitle={task ? `Status: ${TASK_STATUS_LABELS[task.status]}` : 'Loading...'}
+      title={issue?.title || 'Issue Details'}
+      subtitle={issue ? `Status: ${ISSUE_STATUS_LABELS[issue.status]}` : 'Loading...'}
       actions={
         <>
-          {/* ✅ Report Issue Button */}
-          {canReportIssue && (
-            <button
-              className="btn btn-danger"
-              onClick={() => {
-                setShowIssueForm(!showIssueForm);
-                if (!showIssueForm) {
-                  setError(null);
-                  setSuccessMessage(null);
-                }
-              }}
-              disabled={loading}
-              style={{ marginRight: 'var(--spacing-2)' }}
-            >
-              🐛 {showIssueForm ? 'Cancel' : 'Report Issue'}
-            </button>
-          )}
           <button
             className="btn btn-secondary"
             onClick={handleRefresh}
@@ -220,30 +177,22 @@ const TaskDetailsPage = () => {
             className="btn btn-secondary"
             onClick={handleBack}
           >
-            ← Back to Tasks
+            ← Back to Issues
           </button>
         </>
       }
     >
       {loading && (
         <div style={{ textAlign: 'center', padding: 'var(--spacing-8)' }}>
-          <p>Loading task details...</p>
+          <p>Loading issue details...</p>
         </div>
       )}
 
-      {/* ✅ Success Message */}
-      {successMessage && !loading && (
-        <div className="alert alert-success" style={{ marginBottom: 'var(--spacing-4)' }}>
-          {successMessage}
-        </div>
-      )}
-
-      {/* ✅ Error Message */}
       {error && !loading && (
         <div className="alert alert-danger" style={{ marginBottom: 'var(--spacing-4)' }}>
           {error}
           <button
-            onClick={() => setError(null)}
+            onClick={handleRefresh}
             style={{
               marginLeft: 'var(--spacing-2)',
               color: 'var(--color-primary)',
@@ -253,28 +202,13 @@ const TaskDetailsPage = () => {
               textDecoration: 'underline',
             }}
           >
-            Dismiss
+            Try Again
           </button>
         </div>
       )}
 
-      {!loading && !error && task && (
+      {!loading && !error && issue && (
         <div>
-          {/* ✅ Issue Form - Shown when reporting issue */}
-          {showIssueForm && (
-            <CreateIssueForm
-              projectId={projectId}
-              preSelectedTaskId={taskId}
-              preSelectedTaskTitle={task.title}
-              onSuccess={handleCreateIssueFromTask}
-              onCancel={() => {
-                setShowIssueForm(false);
-                setError(null);
-              }}
-            />
-          )}
-
-          {/* Task Details Card */}
           <div className="card" style={{ marginBottom: 'var(--spacing-4)' }}>
             <div style={{
               display: 'grid',
@@ -294,8 +228,23 @@ const TaskDetailsPage = () => {
                   fontWeight: 'var(--font-weight-semibold)',
                   color: 'var(--color-gray-900)',
                 }}>
-                  {task.title}
+                  {issue.title}
                 </div>
+              </div>
+              <div>
+                <div style={{
+                  fontSize: 'var(--font-size-sm)',
+                  color: 'var(--color-gray-500)',
+                  marginBottom: 'var(--spacing-1)',
+                }}>
+                  Type
+                </div>
+                <span style={{
+                  fontSize: 'var(--font-size-sm)',
+                  fontWeight: 'var(--font-weight-medium)',
+                }}>
+                  {ISSUE_TYPE_LABELS[issue.type] || issue.type}
+                </span>
               </div>
               <div>
                 <div style={{
@@ -305,8 +254,8 @@ const TaskDetailsPage = () => {
                 }}>
                   Status
                 </div>
-                <span style={getStatusBadge(task.status)}>
-                  {TASK_STATUS_LABELS[task.status]}
+                <span style={getStatusBadge(issue.status)}>
+                  {ISSUE_STATUS_LABELS[issue.status]}
                 </span>
               </div>
               <div>
@@ -317,12 +266,30 @@ const TaskDetailsPage = () => {
                 }}>
                   Priority
                 </div>
-                <div style={getPriorityStyle(task.priority)}>
-                  {TASK_PRIORITY_LABELS[task.priority]}
+                <div style={getPriorityStyle(issue.priority)}>
+                  {ISSUE_PRIORITY_LABELS[issue.priority]}
+                </div>
+              </div>
+
+              {/* Reporter */}
+              <div>
+                <div style={{
+                  fontSize: 'var(--font-size-sm)',
+                  color: 'var(--color-gray-500)',
+                  marginBottom: 'var(--spacing-1)',
+                }}>
+                  Reported By
+                </div>
+                <div style={{
+                  fontSize: 'var(--font-size-sm)',
+                  fontWeight: 'var(--font-weight-medium)',
+                  color: 'var(--color-gray-900)',
+                }}>
+                  {issue.reporter?.name || 'Unknown'}
                 </div>
               </div>
               
-              {/* Assignee Section */}
+              {/* Assignee Section - Only PROJECT_LEADER can assign */}
               <div>
                 <div style={{
                   fontSize: 'var(--font-size-sm)',
@@ -337,7 +304,7 @@ const TaskDetailsPage = () => {
                   gap: 'var(--spacing-3)',
                   flexWrap: 'wrap',
                 }}>
-                  {task.assignee ? (
+                  {issue.assignee ? (
                     <div style={{
                       display: 'flex',
                       alignItems: 'center',
@@ -364,13 +331,13 @@ const TaskDetailsPage = () => {
                           fontWeight: 'var(--font-weight-medium)',
                           color: 'var(--color-gray-900)',
                         }}>
-                          {task.assignee.name}
+                          {issue.assignee.name}
                         </div>
                         <div style={{
                           fontSize: 'var(--font-size-xs)',
                           color: 'var(--color-gray-500)',
                         }}>
-                          {task.assignee.email}
+                          {issue.assignee.email}
                         </div>
                       </div>
                     </div>
@@ -384,46 +351,54 @@ const TaskDetailsPage = () => {
                     </span>
                   )}
                   
+                  {/* ✅ Assign button only for PROJECT_LEADER */}
                   {canAssign && (
                     <button
                       className="btn btn-primary"
-                      onClick={() => {
-                        setShowAssignForm(!showAssignForm);
-                        if (!showAssignForm) {
-                          setError(null);
-                          setSuccessMessage(null);
-                        }
-                      }}
+                      onClick={() => setShowAssignForm(!showAssignForm)}
                       style={{
                         fontSize: 'var(--font-size-xs)',
                         padding: 'var(--spacing-1) var(--spacing-3)',
                       }}
                     >
-                      {showAssignForm ? 'Cancel' : (task.assignee ? 'Change Assignee' : 'Assign')}
+                      {showAssignForm ? 'Cancel' : (issue.assignee ? 'Change Assignee' : 'Assign')}
                     </button>
                   )}
                 </div>
               </div>
 
-              {/* Project Info */}
+              {/* Linked Task */}
               <div>
                 <div style={{
                   fontSize: 'var(--font-size-sm)',
                   color: 'var(--color-gray-500)',
                   marginBottom: 'var(--spacing-1)',
                 }}>
-                  Project
+                  Linked Task
                 </div>
-                <div style={{
-                  fontSize: 'var(--font-size-sm)',
-                  fontWeight: 'var(--font-weight-medium)',
-                  color: 'var(--color-gray-900)',
-                }}>
-                  {project?.name || 'N/A'}
-                </div>
+                {issue.taskId ? (
+                  <button
+                    className="btn btn-secondary"
+                    onClick={() => navigate(`/projects/${projectId}/tasks/${issue.taskId}`)}
+                    style={{
+                      fontSize: 'var(--font-size-sm)',
+                      padding: 'var(--spacing-1) var(--spacing-3)',
+                    }}
+                  >
+                    🔗 View Task
+                  </button>
+                ) : (
+                  <span style={{
+                    fontSize: 'var(--font-size-sm)',
+                    color: 'var(--color-gray-500)',
+                    fontStyle: 'italic',
+                  }}>
+                    No task linked
+                  </span>
+                )}
               </div>
 
-              {task.description && (
+              {issue.description && (
                 <div style={{ gridColumn: '1 / -1' }}>
                   <div style={{
                     fontSize: 'var(--font-size-sm)',
@@ -437,29 +412,52 @@ const TaskDetailsPage = () => {
                     color: 'var(--color-gray-700)',
                     lineHeight: '1.6',
                   }}>
-                    {task.description}
+                    {issue.description}
                   </div>
                 </div>
               )}
-              <div style={{ gridColumn: '1 / -1' }}>
-                <div style={{
-                  fontSize: 'var(--font-size-sm)',
-                  color: 'var(--color-gray-500)',
-                  marginBottom: 'var(--spacing-1)',
-                }}>
-                  Created At
-                </div>
-                <div style={{
-                  fontSize: 'var(--font-size-sm)',
-                  color: 'var(--color-gray-700)',
-                }}>
-                  {task.createdAt ? new Date(task.createdAt).toLocaleString() : 'N/A'}
-                </div>
-              </div>
             </div>
           </div>
 
-          {/* Status Update Section */}
+          {/* ✅ Assign Form - Only for PROJECT_LEADER */}
+          {showAssignForm && (
+            <div className="card" style={{ marginBottom: 'var(--spacing-4)' }}>
+              <h4 style={{ marginBottom: 'var(--spacing-3)' }}>Assign Issue to Team Member</h4>
+              <ProjectMemberSelect
+                projectId={projectId}
+                label="Select Team Member"
+                value={selectedUserId}
+                onChange={setSelectedUserId}
+                placeholder="Search team members..."
+                disabled={assigning}
+                required
+              />
+              <div style={{
+                display: 'flex',
+                gap: 'var(--spacing-2)',
+                justifyContent: 'flex-end',
+                marginTop: 'var(--spacing-3)',
+              }}>
+                <button
+                  type="button"
+                  className="btn btn-secondary"
+                  onClick={() => setShowAssignForm(false)}
+                  disabled={assigning}
+                >
+                  Cancel
+                </button>
+                <button
+                  className="btn btn-primary"
+                  onClick={handleAssign}
+                  disabled={assigning || !selectedUserId}
+                >
+                  {assigning ? 'Assigning...' : 'Assign Issue'}
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* ✅ Status Update Section - ADMIN, PROJECT_LEADER, or ASSIGNEE */}
           {canUpdateStatus && (
             <div className="card" style={{ marginBottom: 'var(--spacing-4)' }}>
               <h4 style={{ marginBottom: 'var(--spacing-3)' }}>
@@ -474,9 +472,9 @@ const TaskDetailsPage = () => {
                 </span>
               </h4>
               <div style={{ display: 'flex', gap: 'var(--spacing-2)', flexWrap: 'wrap' }}>
-                {Object.entries(TASK_STATUS_LABELS).map(([status, label]) => {
-                  const isCurrent = task.status === status;
-                  const isAllowed = isTaskTransitionAllowed(task.status, status);
+                {Object.entries(ISSUE_STATUS_LABELS).map(([status, label]) => {
+                  const isCurrent = issue.status === status;
+                  const isAllowed = isIssueTransitionAllowed(issue.status, status);
                   const disabled = isCurrent || !isAllowed || updating;
 
                   return (
@@ -491,46 +489,38 @@ const TaskDetailsPage = () => {
                       }}
                     >
                       {label}
-                      {!isAllowed && status !== task.status && ' 🔒'}
+                      {!isAllowed && status !== issue.status && ' 🔒'}
                     </button>
                   );
                 })}
               </div>
-              {task.status === TASK_STATUS.DONE && (
+              {issue.status === ISSUE_STATUS.CLOSED && (
                 <div style={{
                   marginTop: 'var(--spacing-2)',
                   fontSize: 'var(--font-size-sm)',
                   color: 'var(--color-success)',
                 }}>
-                  ✅ Task completed! No further transitions allowed.
+                  ✅ Issue closed! No further transitions allowed.
                 </div>
               )}
-              {/* Status transition info */}
-              <div style={{
-                marginTop: 'var(--spacing-2)',
-                fontSize: 'var(--font-size-xs)',
-                color: 'var(--color-gray-400)',
-                borderTop: 'var(--border-width) solid var(--border-color)',
-                paddingTop: 'var(--spacing-2)',
-              }}>
-                💡 Allowed transitions: 
-                {task.status === TASK_STATUS.TODO && ' TODO → IN_PROGRESS, DONE'}
-                {task.status === TASK_STATUS.IN_PROGRESS && ' IN_PROGRESS → DONE'}
-                {task.status === TASK_STATUS.DONE && ' None (Task completed)'}
-              </div>
             </div>
           )}
 
-          {showAssignForm && (
-            <AssignTaskForm
-              task={task}
-              projectId={projectId}
-              onAssign={handleAssign}
-              onCancel={() => setShowAssignForm(false)}
-            />
+          {/* ✅ If user cannot update status */}
+          {!canUpdateStatus && (
+            <div className="card" style={{ marginBottom: 'var(--spacing-4)', backgroundColor: 'var(--color-gray-50)' }}>
+              <p style={{
+                fontSize: 'var(--font-size-sm)',
+                color: 'var(--color-gray-500)',
+                textAlign: 'center',
+                margin: 0,
+              }}>
+                ℹ️ You have view-only access. Only Admin, Project Leader, or the Assignee can change status.
+              </p>
+            </div>
           )}
 
-          {/* Role-based info */}
+          {/* Role Info */}
           <div style={{
             marginTop: 'var(--spacing-4)',
             padding: 'var(--spacing-3)',
@@ -538,9 +528,6 @@ const TaskDetailsPage = () => {
             borderRadius: 'var(--border-radius-md)',
             fontSize: 'var(--font-size-sm)',
             color: 'var(--color-gray-600)',
-            display: 'flex',
-            flexDirection: 'column',
-            gap: 'var(--spacing-1)',
           }}>
             <div>
               <strong>Your Role: </strong>
@@ -555,28 +542,18 @@ const TaskDetailsPage = () => {
               </span>
             </div>
             {canUpdateStatus ? (
-              <span>✅ You can update task status</span>
+              <span>✅ You can update issue status</span>
             ) : (
-              <span>ℹ️ You have view-only access to this task</span>
+              <span>ℹ️ You have view-only access to this issue</span>
             )}
             {canAssign && (
-              <div>
-                <span>✅ You can assign this task to others</span>
-              </div>
-            )}
-            {canReportIssue && (
-              <div>
-                <span>🐛 You can report an issue for this task</span>
+              <div style={{ marginTop: 'var(--spacing-1)' }}>
+                <span>✅ You can assign this issue to others (Project Leader only)</span>
               </div>
             )}
             {isAdmin && (
-              <div>
-                <span>ℹ️ Admin can view and update status but cannot report issues</span>
-              </div>
-            )}
-            {!isAdmin && !isProjectLeader && !isAssignee && (
-              <div>
-                <span>👁️ You are viewing this task as a project member</span>
+              <div style={{ marginTop: 'var(--spacing-1)' }}>
+                <span>ℹ️ Admin can view and update status but cannot create or assign issues</span>
               </div>
             )}
           </div>
@@ -586,4 +563,4 @@ const TaskDetailsPage = () => {
   );
 };
 
-export default TaskDetailsPage;
+export default IssueDetailsPage;

@@ -1,3 +1,5 @@
+// frontend/src/components/layout/Sidebar.js
+
 import React from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext/AuthContext';
@@ -6,12 +8,10 @@ const Sidebar = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
 
-  // ✅ Navigate to profile page
   const handleProfileClick = () => {
     navigate('/profile');
   };
 
-  // ✅ Role display mapping
   const getRoleDisplay = (role) => {
     if (role === 'ADMIN') return 'Admin';
     return 'Employee';
@@ -22,7 +22,7 @@ const Sidebar = () => {
     { to: '/', label: 'Dashboard', icon: '📊' },
     { to: '/projects', label: 'Projects', icon: '📁' },
     { to: '/tasks', label: 'Tasks', icon: '✅' },
-    { to: '/issues', label: 'Issues', icon: '🐛' },
+    { to: '/issues', label: 'Issues', icon: '🐛' },  // ✅ Issues in sidebar
     { to: '/notifications', label: 'Notifications', icon: '🔔' },
   ];
 
@@ -71,7 +71,7 @@ const Sidebar = () => {
         ))}
       </nav>
 
-      {/* ✅ Clickable User Profile Section at bottom */}
+      {/* Clickable User Profile Section at bottom */}
       <div 
         onClick={handleProfileClick}
         style={{
@@ -128,7 +128,6 @@ const Sidebar = () => {
               {getRoleDisplay(user?.role)}
             </div>
           </div>
-          {/* Profile indicator */}
           <span style={{
             fontSize: 'var(--font-size-xs)',
             color: 'var(--color-gray-400)',

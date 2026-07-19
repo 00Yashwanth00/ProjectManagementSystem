@@ -7,7 +7,7 @@ import java.util.UUID;
 
 public interface IssueService {
 
-    Issue createIssue(UUID projectId, UUID taskId, String title, String description, String type, String priority, UUID reporterId);
+    Issue createIssue(UUID projectId, UUID taskId, String title, String description, String type, String priority, UUID reporterId, UUID assigneeId);
 
     void assignIssue(UUID issueId, UUID assigneeId, UUID currentUserId);
 

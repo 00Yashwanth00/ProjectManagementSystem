@@ -52,7 +52,8 @@ public class Issue {
                  IssuePriority priority,
                  Project project,
                  Task task,
-                 User reporter) {
+                 User reporter,
+                 User assignee) {
 
         this.title = title;
         this.description = description;
@@ -61,6 +62,7 @@ public class Issue {
         this.project = project;
         this.task = task;
         this.reporter = reporter;
+        this.assignee = assignee;  // ✅ Can be null
         this.status = IssueStatus.OPEN;
     }
 

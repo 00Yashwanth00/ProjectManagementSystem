@@ -1,3 +1,5 @@
+// frontend/src/components/layout/Navbar.js
+
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext/AuthContext';
@@ -16,18 +18,15 @@ const Navbar = () => {
     setIsMobileMenuOpen(!isMobileMenuOpen);
   };
 
-  // ✅ Navigate to profile page when user clicks on their avatar/name
   const handleProfileClick = () => {
     navigate('/profile');
   };
 
-  // ✅ Get user initial for avatar
   const getUserInitial = () => {
     if (!user?.name) return 'U';
     return user.name.charAt(0).toUpperCase();
   };
 
-  // ✅ Get role display
   const getRoleDisplay = (role) => {
     const roleMap = {
       'ADMIN': 'Admin',
@@ -113,6 +112,7 @@ const Navbar = () => {
                 onMouseLeave={(e) => e.target.style.background = 'transparent'}>
                   Tasks
                 </Link>
+                {/* ✅ Issues Link - Now visible in navbar */}
                 <Link to="/issues" style={{
                   color: 'var(--color-gray-700)',
                   textDecoration: 'none',
@@ -164,7 +164,6 @@ const Navbar = () => {
                 onMouseEnter={(e) => e.target.style.background = 'var(--color-gray-100)'}
                 onMouseLeave={(e) => e.target.style.background = 'transparent'}>
                   🔔
-                  {/* Notification badge - will be dynamic later */}
                   <span style={{
                     position: 'absolute',
                     top: '-2px',
@@ -197,7 +196,6 @@ const Navbar = () => {
                   onMouseEnter={(e) => e.currentTarget.style.background = 'var(--color-gray-100)'}
                   onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
                 >
-                  {/* User Avatar */}
                   <div style={{
                     width: '32px',
                     height: '32px',
@@ -213,7 +211,6 @@ const Navbar = () => {
                     {getUserInitial()}
                   </div>
                   
-                  {/* User Name & Role */}
                   <div style={{ display: 'flex', flexDirection: 'column' }}>
                     <span style={{
                       fontSize: 'var(--font-size-sm)',
@@ -230,7 +227,6 @@ const Navbar = () => {
                     </span>
                   </div>
 
-                  {/* Dropdown arrow indicator */}
                   <span style={{
                     fontSize: 'var(--font-size-xs)',
                     color: 'var(--color-gray-400)',
@@ -304,13 +300,13 @@ const Navbar = () => {
         }}>
           <Link to="/projects" style={{ padding: 'var(--spacing-2)' }}>Projects</Link>
           <Link to="/tasks" style={{ padding: 'var(--spacing-2)' }}>Tasks</Link>
+          {/* ✅ Issues link in mobile menu */}
           <Link to="/issues" style={{ padding: 'var(--spacing-2)' }}>Issues</Link>
           {user?.role === 'ADMIN' && (
             <Link to="/users" style={{ padding: 'var(--spacing-2)' }}>Users</Link>
           )}
           <Link to="/notifications" style={{ padding: 'var(--spacing-2)' }}>Notifications</Link>
           
-          {/* ✅ Mobile Profile Link */}
           <Link to="/profile" style={{ 
             padding: 'var(--spacing-2)',
             borderTop: 'var(--border-width) solid var(--border-color)',

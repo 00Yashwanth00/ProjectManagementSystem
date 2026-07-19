@@ -1,3 +1,5 @@
+// frontend/src/routes/AppRoutes/AppRoutes.js
+
 import React from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { AuthProvider } from '../../context/AuthContext/AuthContext';
@@ -21,6 +23,10 @@ import ProjectDetailsPage from '../../features/projects/pages/ProjectDetailsPage
 // Task Pages
 import TaskBoardPage from '../../features/tasks/pages/TaskBoardPage';
 import TaskDetailsPage from '../../features/tasks/pages/TaskDetailsPage';
+
+// ✅ Import Issue Pages
+import IssueBoardPage from '../../features/issues/pages/IssueBoardPage';
+import IssueDetailsPage from '../../features/issues/pages/IssueDetailsPage';
 
 import DashboardPage from '../../features/dashboard/pages/DashboardPage';
 
@@ -75,11 +81,27 @@ const AppRoutes = () => {
             </ProtectedRoute>
           } />
           
-          {/* ✅ Task Details with project context */}
           <Route path="/projects/:projectId/tasks/:taskId" element={
             <ProtectedRoute>
               <MainLayout>
                 <TaskDetailsPage />
+              </MainLayout>
+            </ProtectedRoute>
+          } />
+          
+          {/* ✅ Issue Routes - Nested under project */}
+          <Route path="/projects/:projectId/issues" element={
+            <ProtectedRoute>
+              <MainLayout>
+                <IssueBoardPage />
+              </MainLayout>
+            </ProtectedRoute>
+          } />
+          
+          <Route path="/projects/:projectId/issues/:issueId" element={
+            <ProtectedRoute>
+              <MainLayout>
+                <IssueDetailsPage />
               </MainLayout>
             </ProtectedRoute>
           } />
