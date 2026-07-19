@@ -7,42 +7,53 @@ import java.util.UUID;
 public class TaskStatusChangedEvent {
 
     private final UUID taskId;
-    private final UUID userId;
-    private final TaskStatus from;
-    private final TaskStatus to;
+    private final UUID assigneeId;      // ✅ Changed from userId to assigneeId
+    private final UUID creatorId;       // ✅ Added creatorId
+    private final TaskStatus oldStatus; // ✅ Changed from from
+    private final TaskStatus newStatus; // ✅ Changed from to
     private final String changedBy;
-    private final String title;
+    private final String taskTitle;     // ✅ Changed from title
 
+    // Original constructor (for backward compatibility)
     public TaskStatusChangedEvent(UUID taskId, UUID userId, TaskStatus from, TaskStatus to, String changedBy, String title) {
         this.taskId = taskId;
-        this.userId = userId;
-        this.from = from;
-        this.to = to;
+        this.assigneeId = userId;
+        this.creatorId = null;
+        this.oldStatus = from;
+        this.newStatus = to;
         this.changedBy = changedBy;
-        this.title = title;
+        this.taskTitle = title;
     }
 
-    public UUID getTaskId() {
-        return taskId;
+    // ✅ New constructor with all fields
+    public TaskStatusChangedEvent(UUID taskId, UUID assigneeId, UUID creatorId,
+                                  TaskStatus oldStatus, TaskStatus newStatus,
+                                  String changedBy, String taskTitle) {
+        this.taskId = taskId;
+        this.assigneeId = assigneeId;
+        this.creatorId = creatorId;
+        this.oldStatus = oldStatus;
+        this.newStatus = newStatus;
+        this.changedBy = changedBy;
+        this.taskTitle = taskTitle;
     }
 
-    public UUID getUserId() {
-        return userId;
-    }
+    // Getters
+    public UUID getTaskId() { return taskId; }
+    public UUID getAssigneeId() { return assigneeId; }
+    public UUID getCreatorId() { return creatorId; }
+    public TaskStatus getOldStatus() { return oldStatus; }
+    public TaskStatus getNewStatus() { return newStatus; }
+    public String getChangedBy() { return changedBy; }
+    public String getTaskTitle() { return taskTitle; }
 
-    public TaskStatus getFrom() {
-        return from;
-    }
-
-    public TaskStatus getTo() {
-        return to;
-    }
-
-    public String getChangedBy() {
-        return changedBy;
-    }
-
-    public String getTitle() {
-        return title;
-    }
+    // ✅ Legacy getters for backward compatibility
+    @Deprecated
+    public UUID getUserId() { return assigneeId; }
+    @Deprecated
+    public TaskStatus getFrom() { return oldStatus; }
+    @Deprecated
+    public TaskStatus getTo() { return newStatus; }
+    @Deprecated
+    public String getTitle() { return taskTitle; }
 }

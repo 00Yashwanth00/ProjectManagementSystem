@@ -1,11 +1,12 @@
 package com.yashwanth.pms.notification.service;
 
 import com.yashwanth.pms.common.exception.AccessDeniedException;
+import com.yashwanth.pms.common.exception.ResourceNotFoundException;
 import com.yashwanth.pms.notification.domain.Notification;
 import com.yashwanth.pms.notification.domain.NotificationType;
 import com.yashwanth.pms.notification.repository.NotificationRepository;
-import org.aspectj.weaver.ast.Not;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.UUID;
@@ -20,37 +21,69 @@ public class NotificationServiceImpl implements NotificationService {
     }
 
     @Override
+    @Transactional
     public void notifyUser(UUID userId, NotificationType type, String message) {
-
         Notification notification = new Notification(userId, message, type);
         repository.save(notification);
     }
 
     @Override
     public List<Notification> getUserNotifications(UUID userId) {
-
-        return repository.findByUserId(userId);
-
+        return repository.findByUserIdOrderByCreatedAtDesc(userId);
     }
 
     @Override
+    @Transactional
     public void markAsRead(UUID notificationId, UUID userId) {
+        Notification notification = repository.findById(notificationId)
+                .orElseThrow(() -> new ResourceNotFoundException("Notification not found"));
 
-        Notification n = repository.findById(notificationId)
-                .orElseThrow();
-
-        if(!n.getUserId().equals(userId)) {
-            throw new AccessDeniedException("You are not allowed to mark this as read");
+        if (!notification.getUserId().equals(userId)) {
+            throw new AccessDeniedException("You are not allowed to mark this notification as read");
         }
 
-        repository.save(n);
+        notification.markAsRead();
+        repository.save(notification);
+    }
 
+    @Override
+    @Transactional
+    public void markAllAsRead(UUID userId) {
+        List<Notification> unreadNotifications = repository.findByUserIdAndReadFalse(userId);
+        for (Notification notification : unreadNotifications) {
+            notification.markAsRead();
+        }
+        repository.saveAll(unreadNotifications);
     }
 
     @Override
     public Notification getNotification(UUID notificationId) {
+        return repository.findById(notificationId)
+                .orElseThrow(() -> new ResourceNotFoundException("Notification not found"));
+    }
 
-        return repository.findById(notificationId).orElseThrow();
+    @Override
+    public long getUnreadCount(UUID userId) {
+        return repository.countByUserIdAndReadFalse(userId);
+    }
 
+    @Override
+    @Transactional
+    public void deleteNotification(UUID notificationId, UUID userId) {
+        Notification notification = repository.findById(notificationId)
+                .orElseThrow(() -> new ResourceNotFoundException("Notification not found"));
+
+        if (!notification.getUserId().equals(userId)) {
+            throw new AccessDeniedException("You are not allowed to delete this notification");
+        }
+
+        repository.delete(notification);
+    }
+
+    @Override
+    @Transactional
+    public void deleteAllNotifications(UUID userId) {
+        List<Notification> notifications = repository.findByUserIdOrderByCreatedAtDesc(userId);
+        repository.deleteAll(notifications);
     }
 }

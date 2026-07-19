@@ -5,6 +5,7 @@ import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import PageWrapper from '../../../components/layout/PageWrapper';
 import AssignTaskForm from '../components/AssignTaskForm';
 import CreateIssueForm from '../../issues/components/CreateIssueForm';
+import CommentList from '../../comments/components/CommentList';
 import {
   getTaskById,
   updateTaskStatus,
@@ -12,6 +13,7 @@ import {
 } from '../../../api/taskApi/taskApi';
 import { getProjectById } from '../../../api/projectApi/projectApi';
 import { createIssue } from '../../../api/issueApi/issueApi';
+import { getTaskComments, addTaskComment } from '../../../api/commentApi/commentApi';
 import { useAuth } from '../../../context/AuthContext/AuthContext';
 import {
   TASK_STATUS_LABELS,
@@ -35,15 +37,16 @@ const TaskDetailsPage = () => {
   const [showAssignForm, setShowAssignForm] = useState(false);
   const [showIssueForm, setShowIssueForm] = useState(false);
   const [updating, setUpdating] = useState(false);
+  
+  // ✅ Comments State
+  const [comments, setComments] = useState([]);
+  const [commentsLoading, setCommentsLoading] = useState(false);
 
   const isAdmin = user?.role === 'ADMIN';
   const isProjectLeader = project?.leader?.id === user?.id;
   const isAssignee = task?.assignee?.id === user?.id;
   const canAssign = isAdmin || isProjectLeader;
   const canUpdateStatus = isAdmin || isProjectLeader || isAssignee;
-  
-  // ✅ Anyone who can view the task (is a project member) can report an issue
-  // But ADMIN cannot create issues
   const canReportIssue = !isAdmin && (isProjectLeader || isAssignee);
 
   // ✅ Auto-open issue form if URL has reportIssue=true parameter
@@ -51,7 +54,6 @@ const TaskDetailsPage = () => {
     const params = new URLSearchParams(location.search);
     if (params.get('reportIssue') === 'true' && canReportIssue) {
       setShowIssueForm(true);
-      // Clean up URL parameter
       navigate(`/projects/${projectId}/tasks/${taskId}`, { replace: true });
     }
   }, [location, canReportIssue, projectId, taskId, navigate]);
@@ -59,6 +61,7 @@ const TaskDetailsPage = () => {
   useEffect(() => {
     if (taskId && projectId) {
       fetchTaskAndProject();
+      fetchComments();
     }
   }, [taskId, projectId]);
 
@@ -87,13 +90,31 @@ const TaskDetailsPage = () => {
     }
   };
 
+  // ✅ Fetch Comments
+  const fetchComments = async () => {
+    try {
+      setCommentsLoading(true);
+      const response = await getTaskComments(taskId);
+      setComments(response.data);
+    } catch (err) {
+      console.error('Failed to fetch comments:', err);
+    } finally {
+      setCommentsLoading(false);
+    }
+  };
+
+  // ✅ Handle Add Comment
+  const handleAddComment = async (content) => {
+    const response = await addTaskComment(taskId, content);
+    return response.data;
+  };
+
   // ✅ Handle issue creation from task
   const handleCreateIssueFromTask = async (formData) => {
     try {
-      // ✅ Ensure taskId is set to current task
       const issueData = {
         ...formData,
-        taskId: taskId  // ✅ Fixed to current task
+        taskId: taskId
       };
       
       await createIssue(projectId, issueData);
@@ -147,6 +168,7 @@ const TaskDetailsPage = () => {
 
   const handleRefresh = () => {
     fetchTaskAndProject();
+    fetchComments();
   };
 
   const handleBack = () => {
@@ -192,7 +214,6 @@ const TaskDetailsPage = () => {
       subtitle={task ? `Status: ${TASK_STATUS_LABELS[task.status]}` : 'Loading...'}
       actions={
         <>
-          {/* ✅ Report Issue Button */}
           {canReportIssue && (
             <button
               className="btn btn-danger"
@@ -231,14 +252,12 @@ const TaskDetailsPage = () => {
         </div>
       )}
 
-      {/* ✅ Success Message */}
       {successMessage && !loading && (
         <div className="alert alert-success" style={{ marginBottom: 'var(--spacing-4)' }}>
           {successMessage}
         </div>
       )}
 
-      {/* ✅ Error Message */}
       {error && !loading && (
         <div className="alert alert-danger" style={{ marginBottom: 'var(--spacing-4)' }}>
           {error}
@@ -260,7 +279,6 @@ const TaskDetailsPage = () => {
 
       {!loading && !error && task && (
         <div>
-          {/* ✅ Issue Form - Shown when reporting issue */}
           {showIssueForm && (
             <CreateIssueForm
               projectId={projectId}
@@ -505,7 +523,6 @@ const TaskDetailsPage = () => {
                   ✅ Task completed! No further transitions allowed.
                 </div>
               )}
-              {/* Status transition info */}
               <div style={{
                 marginTop: 'var(--spacing-2)',
                 fontSize: 'var(--font-size-xs)',
@@ -529,6 +546,17 @@ const TaskDetailsPage = () => {
               onCancel={() => setShowAssignForm(false)}
             />
           )}
+
+          {/* ✅ Comments Section */}
+          <CommentList
+            comments={comments}
+            currentUserId={user?.id}
+            onAddComment={handleAddComment}
+            onCommentUpdated={fetchComments}
+            loading={commentsLoading}
+            targetType="task"
+            targetId={taskId}
+          />
 
           {/* Role-based info */}
           <div style={{

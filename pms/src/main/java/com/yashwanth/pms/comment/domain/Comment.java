@@ -6,6 +6,8 @@ import com.yashwanth.pms.user.domain.User;
 import jakarta.persistence.*;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 
 @Entity
@@ -20,78 +22,78 @@ public class Comment {
     private String content;
 
     @ManyToOne(optional = false)
+    @JoinColumn(name = "author_id")
     private User author;
 
     @ManyToOne
+    @JoinColumn(name = "task_id")
     private Task task;
 
     @ManyToOne
+    @JoinColumn(name = "issue_id")
     private Issue issue;
 
-    @Column(nullable = false)
+    @ManyToOne
+    @JoinColumn(name = "parent_comment_id")
+    private Comment parentComment;
+
+    @OneToMany(mappedBy = "parentComment", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private List<Comment> replies = new ArrayList<>();
+
+    @Column(name = "created_at", nullable = false)
     private LocalDateTime createdAt;
 
-    protected Comment() {
-        // for JPA
-    }
+    @Column(name = "updated_at")
+    private LocalDateTime updatedAt;
 
-    private Comment(String content,
-                    User author,
-                    Task task,
-                    Issue issue) {
+    protected Comment() {}
 
+    // ✅ Constructor without parent comment
+    public Comment(String content, User author, Task task, Issue issue) {
         this.content = content;
         this.author = author;
         this.task = task;
         this.issue = issue;
         this.createdAt = LocalDateTime.now();
+        this.updatedAt = LocalDateTime.now();
     }
 
-    /* =========================
-       Factory methods
-       ========================= */
-
-    public static Comment forTask(
-            String content,
-            User author,
-            Task task
-    ) {
-        return new Comment(content, author, task, null);
+    // ✅ Constructor with parent comment
+    public Comment(String content, User author, Task task, Issue issue, Comment parentComment) {
+        this(content, author, task, issue);
+        this.parentComment = parentComment;
     }
 
-    public static Comment forIssue(
-            String content,
-            User author,
-            Issue issue
-    ) {
-        return new Comment(content, author, null, issue);
+    public void updateContent(String newContent) {
+        this.content = newContent;
+        this.updatedAt = LocalDateTime.now();
     }
 
-    /* =========================
-       Getters
-       ========================= */
-
-    public UUID getId() {
-        return id;
+    public boolean canEdit(User user) {
+        return this.author.getId().equals(user.getId()) || user.getRole().name().equals("ADMIN");
     }
 
-    public String getContent() {
-        return content;
+    public boolean canDelete(User user) {
+        return this.author.getId().equals(user.getId()) || user.getRole().name().equals("ADMIN");
     }
 
-    public User getAuthor() {
-        return author;
-    }
-
-    public Task getTask() {
-        return task;
-    }
-
-    public Issue getIssue() {
-        return issue;
-    }
-
-    public LocalDateTime getCreatedAt() {
-        return createdAt;
-    }
+    // Getters and setters
+    public UUID getId() { return id; }
+    public void setId(UUID id) { this.id = id; }
+    public String getContent() { return content; }
+    public void setContent(String content) { this.content = content; }
+    public User getAuthor() { return author; }
+    public void setAuthor(User author) { this.author = author; }
+    public Task getTask() { return task; }
+    public void setTask(Task task) { this.task = task; }
+    public Issue getIssue() { return issue; }
+    public void setIssue(Issue issue) { this.issue = issue; }
+    public Comment getParentComment() { return parentComment; }
+    public void setParentComment(Comment parentComment) { this.parentComment = parentComment; }
+    public List<Comment> getReplies() { return replies; }
+    public void setReplies(List<Comment> replies) { this.replies = replies; }
+    public LocalDateTime getCreatedAt() { return createdAt; }
+    public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
+    public LocalDateTime getUpdatedAt() { return updatedAt; }
+    public void setUpdatedAt(LocalDateTime updatedAt) { this.updatedAt = updatedAt; }
 }

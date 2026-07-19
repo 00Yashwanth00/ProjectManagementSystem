@@ -149,3 +149,56 @@ table {
   clip: rect(0, 0, 0, 0);
   border: 0;
 }
+
+/* frontend/src/styles/global.css */
+
+@keyframes pulse {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.1);
+  }
+}
+
+/* Bell icon pulse when there are unread notifications */
+.notification-bell {
+  transition: transform var(--transition-fast);
+}
+
+.notification-bell:hover {
+  transform: scale(1.1);
+}
+
+/* Notification dropdown smooth entrance */
+.notification-dropdown {
+  animation: slideDown 0.2s ease-out;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Notification item hover */
+.notification-item {
+  transition: background var(--transition-fast);
+}
+
+.notification-item:hover {
+  background: var(--color-gray-50);
+}
+
+.notification-item-unread {
+  background: var(--color-primary-bg);
+}
+
+.notification-item-unread:hover {
+  background: var(--color-primary-bg);
+}

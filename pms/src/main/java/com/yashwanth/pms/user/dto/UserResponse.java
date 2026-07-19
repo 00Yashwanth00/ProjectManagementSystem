@@ -13,6 +13,7 @@ public class UserResponse {
     private Role role;
 
     public static UserResponse from(User user) {
+        if (user == null) return null;
         UserResponse response = new UserResponse();
         response.id = user.getId();
         response.name = user.getName();
@@ -21,19 +22,16 @@ public class UserResponse {
         return response;
     }
 
-    public UUID getId() {
-        return id;
-    }
+    // ❌ REMOVE this method - it's not needed
+    // public static UserResponse fromCurrentUser(UUID userId) { ... }
 
-    public String getName() {
-        return name;
-    }
-
-    public String getEmail() {
-        return email;
-    }
-
-    public Role getRole() {
-        return role;
-    }
+    // Getters and setters
+    public UUID getId() { return id; }
+    public void setId(UUID id) { this.id = id; }
+    public String getName() { return name; }
+    public void setName(String name) { this.name = name; }
+    public String getEmail() { return email; }
+    public void setEmail(String email) { this.email = email; }
+    public Role getRole() { return role; }
+    public void setRole(Role role) { this.role = role; }
 }

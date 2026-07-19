@@ -2,7 +2,6 @@ package com.yashwanth.pms.comment.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.yashwanth.pms.comment.domain.Comment;
-import com.yashwanth.pms.comment.dto.AddCommentRequest;
 import com.yashwanth.pms.comment.service.CommentService;
 import com.yashwanth.pms.project.domain.Project;
 import com.yashwanth.pms.security.CustomUserDetailsService;

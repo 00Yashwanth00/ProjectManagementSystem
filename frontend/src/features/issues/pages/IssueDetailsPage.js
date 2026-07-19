@@ -4,12 +4,14 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import PageWrapper from '../../../components/layout/PageWrapper';
 import ProjectMemberSelect from '../../users/components/ProjectMemberSelect';
+import CommentList from '../../comments/components/CommentList';
 import {
   getIssueById,
   updateIssueStatus,
   assignIssue,
 } from '../../../api/issueApi/issueApi';
 import { getProjectById } from '../../../api/projectApi/projectApi';
+import { getIssueComments, addIssueComment } from '../../../api/commentApi/commentApi';
 import { useAuth } from '../../../context/AuthContext/AuthContext';
 import {
   ISSUE_STATUS_LABELS,
@@ -29,24 +31,28 @@ const IssueDetailsPage = () => {
   const [project, setProject] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [successMessage, setSuccessMessage] = useState(null);
   const [showAssignForm, setShowAssignForm] = useState(false);
   const [selectedUserId, setSelectedUserId] = useState('');
   const [assigning, setAssigning] = useState(false);
   const [updating, setUpdating] = useState(false);
 
-  // ✅ Role checks
+  // ✅ Comments State
+  const [comments, setComments] = useState([]);
+  const [commentsLoading, setCommentsLoading] = useState(false);
+
   const isAdmin = user?.role === 'ADMIN';
   const isProjectLeader = project?.leader?.id === user?.id;
   const isAssignee = issue?.assignee?.id === user?.id;
   const isTeamMember = project?.members?.some(m => m.user?.id === user?.id);
 
-  // ✅ Permissions
-  const canAssign = isProjectLeader; // Only PROJECT_LEADER can assign
-  const canUpdateStatus = isAdmin || isProjectLeader || isAssignee; // ADMIN, PROJECT_LEADER, or ASSIGNEE
+  const canAssign = isProjectLeader;
+  const canUpdateStatus = isAdmin || isProjectLeader || isAssignee;
 
   useEffect(() => {
     if (issueId && projectId) {
       fetchIssueAndProject();
+      fetchComments();
     }
   }, [issueId, projectId]);
 
@@ -54,6 +60,7 @@ const IssueDetailsPage = () => {
     try {
       setLoading(true);
       setError(null);
+      setSuccessMessage(null);
       
       const [issueResponse, projectResponse] = await Promise.all([
         getIssueById(projectId, issueId),
@@ -74,6 +81,25 @@ const IssueDetailsPage = () => {
     }
   };
 
+  // ✅ Fetch Comments
+  const fetchComments = async () => {
+    try {
+      setCommentsLoading(true);
+      const response = await getIssueComments(issueId);
+      setComments(response.data);
+    } catch (err) {
+      console.error('Failed to fetch comments:', err);
+    } finally {
+      setCommentsLoading(false);
+    }
+  };
+
+  // ✅ Handle Add Comment
+  const handleAddComment = async (content) => {
+    const response = await addIssueComment(issueId, content);
+    return response.data;
+  };
+
   const handleStatusChange = async (newStatus) => {
     if (!issue) return;
 
@@ -87,6 +113,8 @@ const IssueDetailsPage = () => {
       setUpdating(true);
       await updateIssueStatus(projectId, issueId, newStatus);
       setIssue(prev => ({ ...prev, status: newStatus }));
+      setSuccessMessage(`✅ Status updated to ${ISSUE_STATUS_LABELS[newStatus]}`);
+      setTimeout(() => setSuccessMessage(null), 3000);
     } catch (err) {
       setError(err.response?.data?.message || 'Failed to update status');
       setTimeout(() => setError(null), 3000);
@@ -109,6 +137,8 @@ const IssueDetailsPage = () => {
       setIssue({ ...response.data, projectId: projectId });
       setShowAssignForm(false);
       setSelectedUserId('');
+      setSuccessMessage('✅ Issue assigned successfully!');
+      setTimeout(() => setSuccessMessage(null), 3000);
     } catch (err) {
       setError(err.response?.data?.message || 'Failed to assign issue');
       setTimeout(() => setError(null), 3000);
@@ -119,6 +149,7 @@ const IssueDetailsPage = () => {
 
   const handleRefresh = () => {
     fetchIssueAndProject();
+    fetchComments();
   };
 
   const handleBack = () => {
@@ -151,7 +182,6 @@ const IssueDetailsPage = () => {
     return issue.assignee.name?.charAt(0)?.toUpperCase() || '?';
   };
 
-  // ✅ Get user's role display
   const getUserRoleDisplay = () => {
     if (isAdmin) return 'Admin';
     if (isProjectLeader) return 'Project Leader';
@@ -188,11 +218,17 @@ const IssueDetailsPage = () => {
         </div>
       )}
 
+      {successMessage && !loading && (
+        <div className="alert alert-success" style={{ marginBottom: 'var(--spacing-4)' }}>
+          {successMessage}
+        </div>
+      )}
+
       {error && !loading && (
         <div className="alert alert-danger" style={{ marginBottom: 'var(--spacing-4)' }}>
           {error}
           <button
-            onClick={handleRefresh}
+            onClick={() => setError(null)}
             style={{
               marginLeft: 'var(--spacing-2)',
               color: 'var(--color-primary)',
@@ -202,7 +238,7 @@ const IssueDetailsPage = () => {
               textDecoration: 'underline',
             }}
           >
-            Try Again
+            Dismiss
           </button>
         </div>
       )}
@@ -289,7 +325,7 @@ const IssueDetailsPage = () => {
                 </div>
               </div>
               
-              {/* Assignee Section - Only PROJECT_LEADER can assign */}
+              {/* Assignee Section */}
               <div>
                 <div style={{
                   fontSize: 'var(--font-size-sm)',
@@ -351,11 +387,16 @@ const IssueDetailsPage = () => {
                     </span>
                   )}
                   
-                  {/* ✅ Assign button only for PROJECT_LEADER */}
                   {canAssign && (
                     <button
                       className="btn btn-primary"
-                      onClick={() => setShowAssignForm(!showAssignForm)}
+                      onClick={() => {
+                        setShowAssignForm(!showAssignForm);
+                        if (!showAssignForm) {
+                          setError(null);
+                          setSuccessMessage(null);
+                        }
+                      }}
                       style={{
                         fontSize: 'var(--font-size-xs)',
                         padding: 'var(--spacing-1) var(--spacing-3)',
@@ -419,7 +460,7 @@ const IssueDetailsPage = () => {
             </div>
           </div>
 
-          {/* ✅ Assign Form - Only for PROJECT_LEADER */}
+          {/* Assign Form */}
           {showAssignForm && (
             <div className="card" style={{ marginBottom: 'var(--spacing-4)' }}>
               <h4 style={{ marginBottom: 'var(--spacing-3)' }}>Assign Issue to Team Member</h4>
@@ -457,7 +498,7 @@ const IssueDetailsPage = () => {
             </div>
           )}
 
-          {/* ✅ Status Update Section - ADMIN, PROJECT_LEADER, or ASSIGNEE */}
+          {/* Status Update Section */}
           {canUpdateStatus && (
             <div className="card" style={{ marginBottom: 'var(--spacing-4)' }}>
               <h4 style={{ marginBottom: 'var(--spacing-3)' }}>
@@ -506,7 +547,6 @@ const IssueDetailsPage = () => {
             </div>
           )}
 
-          {/* ✅ If user cannot update status */}
           {!canUpdateStatus && (
             <div className="card" style={{ marginBottom: 'var(--spacing-4)', backgroundColor: 'var(--color-gray-50)' }}>
               <p style={{
@@ -520,6 +560,17 @@ const IssueDetailsPage = () => {
             </div>
           )}
 
+          {/* ✅ Comments Section */}
+          <CommentList
+            comments={comments}
+            currentUserId={user?.id}
+            onAddComment={handleAddComment}
+            onCommentUpdated={fetchComments}
+            loading={commentsLoading}
+            targetType="issue"
+            targetId={issueId}
+          />
+
           {/* Role Info */}
           <div style={{
             marginTop: 'var(--spacing-4)',
@@ -528,6 +579,9 @@ const IssueDetailsPage = () => {
             borderRadius: 'var(--border-radius-md)',
             fontSize: 'var(--font-size-sm)',
             color: 'var(--color-gray-600)',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: 'var(--spacing-1)',
           }}>
             <div>
               <strong>Your Role: </strong>
@@ -536,7 +590,8 @@ const IssueDetailsPage = () => {
                 color: isAdmin ? 'var(--color-danger)' : 
                        isProjectLeader ? 'var(--color-primary)' : 
                        isAssignee ? 'var(--color-success)' :
-                       'var(--color-gray-600)',
+                       isTeamMember ? 'var(--color-gray-600)' :
+                       'var(--color-gray-500)',
               }}>
                 {getUserRoleDisplay()}
               </span>

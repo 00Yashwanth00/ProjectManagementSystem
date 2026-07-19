@@ -3,11 +3,16 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext/AuthContext';
+import { useNotification } from '../../context/NotificationContext/NotificationContext';
+import { getMyProjects } from '../../api/projectApi/projectApi';
+import NotificationBell from '../../features/notifications/components/NotificationBell';
 
 const Navbar = () => {
   const { user, logout, isAuthenticated } = useAuth();
+  const { unreadCount } = useNotification(); // ✅ Get unreadCount from NotificationContext
   const navigate = useNavigate();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [loading, setLoading] = useState(false);
 
   const handleLogout = () => {
     logout();
@@ -20,6 +25,42 @@ const Navbar = () => {
 
   const handleProfileClick = () => {
     navigate('/profile');
+  };
+
+  // ✅ Handle navigation to first project's tasks
+  const handleTasksClick = async () => {
+    try {
+      setLoading(true);
+      const response = await getMyProjects();
+      if (response.data && response.data.length > 0) {
+        navigate(`/projects/${response.data[0].id}/tasks`);
+      } else {
+        navigate('/projects');
+      }
+    } catch (error) {
+      console.error('Failed to fetch projects:', error);
+      navigate('/projects');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // ✅ Handle navigation to first project's issues
+  const handleIssuesClick = async () => {
+    try {
+      setLoading(true);
+      const response = await getMyProjects();
+      if (response.data && response.data.length > 0) {
+        navigate(`/projects/${response.data[0].id}/issues`);
+      } else {
+        navigate('/projects');
+      }
+    } catch (error) {
+      console.error('Failed to fetch projects:', error);
+      navigate('/projects');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const getUserInitial = () => {
@@ -99,33 +140,55 @@ const Navbar = () => {
                 onMouseLeave={(e) => e.target.style.background = 'transparent'}>
                   Projects
                 </Link>
-                <Link to="/tasks" style={{
-                  color: 'var(--color-gray-700)',
-                  textDecoration: 'none',
-                  fontSize: 'var(--font-size-sm)',
-                  fontWeight: 'var(--font-weight-medium)',
-                  padding: 'var(--spacing-2) var(--spacing-3)',
-                  borderRadius: 'var(--border-radius-md)',
-                  transition: 'background var(--transition-fast)',
-                }}
-                onMouseEnter={(e) => e.target.style.background = 'var(--color-gray-100)'}
-                onMouseLeave={(e) => e.target.style.background = 'transparent'}>
-                  Tasks
-                </Link>
-                {/* ✅ Issues Link - Now visible in navbar */}
-                <Link to="/issues" style={{
-                  color: 'var(--color-gray-700)',
-                  textDecoration: 'none',
-                  fontSize: 'var(--font-size-sm)',
-                  fontWeight: 'var(--font-weight-medium)',
-                  padding: 'var(--spacing-2) var(--spacing-3)',
-                  borderRadius: 'var(--border-radius-md)',
-                  transition: 'background var(--transition-fast)',
-                }}
-                onMouseEnter={(e) => e.target.style.background = 'var(--color-gray-100)'}
-                onMouseLeave={(e) => e.target.style.background = 'transparent'}>
-                  Issues
-                </Link>
+                
+                <button
+                  onClick={handleTasksClick}
+                  disabled={loading}
+                  style={{
+                    color: 'var(--color-gray-700)',
+                    textDecoration: 'none',
+                    fontSize: 'var(--font-size-sm)',
+                    fontWeight: 'var(--font-weight-medium)',
+                    padding: 'var(--spacing-2) var(--spacing-3)',
+                    borderRadius: 'var(--border-radius-md)',
+                    transition: 'background var(--transition-fast)',
+                    background: 'none',
+                    border: 'none',
+                    cursor: loading ? 'default' : 'pointer',
+                    opacity: loading ? 0.5 : 1,
+                  }}
+                  onMouseEnter={(e) => {
+                    if (!loading) e.target.style.background = 'var(--color-gray-100)';
+                  }}
+                  onMouseLeave={(e) => e.target.style.background = 'transparent'}
+                >
+                  {loading ? 'Loading...' : 'Tasks'}
+                </button>
+                
+                <button
+                  onClick={handleIssuesClick}
+                  disabled={loading}
+                  style={{
+                    color: 'var(--color-gray-700)',
+                    textDecoration: 'none',
+                    fontSize: 'var(--font-size-sm)',
+                    fontWeight: 'var(--font-weight-medium)',
+                    padding: 'var(--spacing-2) var(--spacing-3)',
+                    borderRadius: 'var(--border-radius-md)',
+                    transition: 'background var(--transition-fast)',
+                    background: 'none',
+                    border: 'none',
+                    cursor: loading ? 'default' : 'pointer',
+                    opacity: loading ? 0.5 : 1,
+                  }}
+                  onMouseEnter={(e) => {
+                    if (!loading) e.target.style.background = 'var(--color-gray-100)';
+                  }}
+                  onMouseLeave={(e) => e.target.style.background = 'transparent'}
+                >
+                  {loading ? 'Loading...' : 'Issues'}
+                </button>
+                
                 {user?.role === 'ADMIN' && (
                   <Link to="/users" style={{
                     color: 'var(--color-gray-700)',
@@ -151,37 +214,10 @@ const Navbar = () => {
                 borderLeft: 'var(--border-width) solid var(--border-color)',
                 paddingLeft: 'var(--spacing-4)',
               }}>
-                {/* Notifications */}
-                <Link to="/notifications" style={{
-                  color: 'var(--color-gray-600)',
-                  fontSize: 'var(--font-size-xl)',
-                  textDecoration: 'none',
-                  position: 'relative',
-                  padding: 'var(--spacing-1)',
-                  borderRadius: 'var(--border-radius-full)',
-                  transition: 'background var(--transition-fast)',
-                }}
-                onMouseEnter={(e) => e.target.style.background = 'var(--color-gray-100)'}
-                onMouseLeave={(e) => e.target.style.background = 'transparent'}>
-                  🔔
-                  <span style={{
-                    position: 'absolute',
-                    top: '-2px',
-                    right: '-2px',
-                    backgroundColor: 'var(--color-danger)',
-                    color: 'var(--color-white)',
-                    fontSize: 'var(--font-size-xs)',
-                    borderRadius: 'var(--border-radius-full)',
-                    padding: '2px 6px',
-                    minWidth: '18px',
-                    textAlign: 'center',
-                    fontWeight: 'var(--font-weight-bold)',
-                  }}>
-                    0
-                  </span>
-                </Link>
+                {/* ✅ Notification Bell */}
+                <NotificationBell />
 
-                {/* ✅ Clickable User Profile Section */}
+                {/* Clickable User Profile Section */}
                 <div 
                   onClick={handleProfileClick}
                   style={{
@@ -299,13 +335,68 @@ const Navbar = () => {
           zIndex: 'var(--z-dropdown)',
         }}>
           <Link to="/projects" style={{ padding: 'var(--spacing-2)' }}>Projects</Link>
-          <Link to="/tasks" style={{ padding: 'var(--spacing-2)' }}>Tasks</Link>
-          {/* ✅ Issues link in mobile menu */}
-          <Link to="/issues" style={{ padding: 'var(--spacing-2)' }}>Issues</Link>
+          
+          <button
+            onClick={handleTasksClick}
+            disabled={loading}
+            style={{
+              padding: 'var(--spacing-2)',
+              background: 'none',
+              border: 'none',
+              textAlign: 'left',
+              fontSize: 'var(--font-size-base)',
+              cursor: loading ? 'default' : 'pointer',
+              opacity: loading ? 0.5 : 1,
+              color: 'var(--color-gray-700)',
+            }}
+          >
+            {loading ? 'Loading...' : 'Tasks'}
+          </button>
+          
+          <button
+            onClick={handleIssuesClick}
+            disabled={loading}
+            style={{
+              padding: 'var(--spacing-2)',
+              background: 'none',
+              border: 'none',
+              textAlign: 'left',
+              fontSize: 'var(--font-size-base)',
+              cursor: loading ? 'default' : 'pointer',
+              opacity: loading ? 0.5 : 1,
+              color: 'var(--color-gray-700)',
+            }}
+          >
+            {loading ? 'Loading...' : 'Issues'}
+          </button>
+          
           {user?.role === 'ADMIN' && (
             <Link to="/users" style={{ padding: 'var(--spacing-2)' }}>Users</Link>
           )}
-          <Link to="/notifications" style={{ padding: 'var(--spacing-2)' }}>Notifications</Link>
+          
+          {/* ✅ Notifications link in mobile menu */}
+          <Link to="/notifications" style={{ 
+            padding: 'var(--spacing-2)',
+            display: 'flex',
+            alignItems: 'center',
+            gap: 'var(--spacing-2)',
+          }}>
+            🔔 Notifications
+            {unreadCount > 0 && (
+              <span style={{
+                backgroundColor: 'var(--color-danger)',
+                color: 'var(--color-white)',
+                fontSize: 'var(--font-size-xs)',
+                borderRadius: 'var(--border-radius-full)',
+                padding: '2px 6px',
+                minWidth: '18px',
+                textAlign: 'center',
+                fontWeight: 'var(--font-weight-bold)',
+              }}>
+                {unreadCount}
+              </span>
+            )}
+          </Link>
           
           <Link to="/profile" style={{ 
             padding: 'var(--spacing-2)',

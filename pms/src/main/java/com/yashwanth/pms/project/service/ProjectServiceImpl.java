@@ -126,14 +126,15 @@ public class ProjectServiceImpl implements ProjectService {
 
         projectRepository.save(project);
 
+        // ✅ Get list of all members to notify
         List<UUID> members = project.getMembers().stream()
                 .map(User::getId)
-                .toList();
+                .collect(Collectors.toList());
 
+        // ✅ Publish event with 3 parameters (projectName, memberName, members)
         publisher.publishEvent(new ProjectMemberAddedEvent(
                 project.getName(),
                 String.join(", ", addedUsers),
-                "members",
                 members
         ));
 

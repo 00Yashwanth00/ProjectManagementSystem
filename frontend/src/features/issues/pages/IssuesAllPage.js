@@ -20,8 +20,6 @@ const IssuesAllPage = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  const isAdmin = user?.role === 'ADMIN';
-
   useEffect(() => {
     fetchAllIssues();
   }, []);
@@ -48,6 +46,9 @@ const IssuesAllPage = () => {
           console.error(`Failed to fetch issues for project ${project.id}:`, err);
         }
       }
+      
+      // Sort by createdAt (newest first)
+      issues.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
       
       setAllIssues(issues);
     } catch (err) {
