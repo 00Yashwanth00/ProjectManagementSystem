@@ -1,5 +1,6 @@
 package com.yashwanth.pms.config;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.cors.CorsConfiguration;
@@ -11,13 +12,16 @@ import java.util.Arrays;
 @Configuration
 public class CorsConfig {
 
+    // Comma-separated list, e.g. "http://localhost:3000,https://your-app.netlify.app"
+    @Value("${app.cors.allowed-origins:http://localhost:3000}")
+    private String allowedOrigins;
+
     @Bean
     public CorsFilter corsFilter() {
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         CorsConfiguration config = new CorsConfiguration();
 
-        // Allow all origins (for development)
-        config.setAllowedOrigins(Arrays.asList("http://localhost:3000"));
+        config.setAllowedOrigins(Arrays.asList(allowedOrigins.split(",")));
         config.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"));
         config.setAllowedHeaders(Arrays.asList("*"));
         config.setAllowCredentials(true);

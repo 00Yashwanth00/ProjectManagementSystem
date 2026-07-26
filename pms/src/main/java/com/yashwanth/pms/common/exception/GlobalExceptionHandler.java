@@ -30,6 +30,15 @@ public class GlobalExceptionHandler {
                 .body(error(ex.getMessage(), HttpStatus.BAD_REQUEST));
     }
 
+    // Covers BadCredentialsException, DisabledException, LockedException, etc.
+    // Without this, wrong login credentials fell through to handleGeneric() below and
+    // incorrectly returned 500 instead of 401.
+    @ExceptionHandler(org.springframework.security.core.AuthenticationException.class)
+    public ResponseEntity<?> handleAuthentication(org.springframework.security.core.AuthenticationException ex) {
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                .body(error("Invalid email or password", HttpStatus.UNAUTHORIZED));
+    }
+
     @ExceptionHandler(Exception.class)
     public ResponseEntity<?> handleGeneric(Exception ex) {
         ex.printStackTrace();
