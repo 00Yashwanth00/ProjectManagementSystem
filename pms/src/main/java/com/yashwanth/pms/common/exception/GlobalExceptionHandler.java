@@ -31,6 +31,12 @@ public class GlobalExceptionHandler {
                 .body(error(ex.getMessage(), HttpStatus.FORBIDDEN));
     }
 
+    @ExceptionHandler(DuplicateUserException.class)
+    public ResponseEntity<?> handleDuplicateUser(DuplicateUserException ex) {
+        return ResponseEntity.status(HttpStatus.CONFLICT)
+                .body(error(ex.getMessage(), HttpStatus.CONFLICT));
+    }
+
     @ExceptionHandler(BusinessException.class)
     public ResponseEntity<?> handleBusiness(BusinessException ex) {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST)
