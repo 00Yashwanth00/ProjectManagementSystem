@@ -34,10 +34,21 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
         String header = request.getHeader("Authorization");
 
-        if (header != null && header.startsWith("Bearer ")) {
+        // Issue 3 fix: don't clobber an authentication that's already been set on this
+        // request (e.g. by another filter earlier in the chain). Cheap defensive check -
+        // OncePerRequestFilter already prevents this filter running twice on the same
+        // request, but this guards against the broader case regardless.
+        boolean alreadyAuthenticated = SecurityContextHolder.getContext().getAuthentication() != null;
+
+        if (header != null && header.startsWith("Bearer ") && !alreadyAuthenticated) {
             String token = header.substring(7);
 
             try {
+                // Issue 1 fix: explicit validation step instead of relying on validation
+                // happening only as a side effect inside extractUsername(). Fails fast and
+                // makes the intent readable.
+                jwtUtil.validate(token);
+
                 String email = jwtUtil.extractUsername(token);
                 UserDetails user = userDetailsService.loadUserByUsername(email);
 
@@ -45,9 +56,9 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 SecurityContextHolder.getContext().setAuthentication(auth);
             } catch (JwtException | UsernameNotFoundException ex) {
                 // Expired, malformed, tampered token, or the user no longer exists.
-                // Don't set authentication - leave the request anonymous. Downstream
-                // authorization rules (.authenticated() / @PreAuthorize) will then reject
-                // it with a clean 401/403 instead of this throwing all the way up as a 500.
+                // Leave the request anonymous - downstream authorization rules
+                // (.authenticated() / @PreAuthorize) then reject with a clean 401/403
+                // instead of this throwing all the way up as a 500.
                 logger.debug("JWT authentication failed: {}", ex.getMessage());
                 SecurityContextHolder.clearContext();
             }
