@@ -4,6 +4,7 @@ import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jws;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import java.util.Date;
@@ -11,7 +12,10 @@ import java.util.Date;
 @Component
 public class JwtUtil {
 
-    private final String SECRET = "e583075deb8fddfbf436dbad3df6e1984c683b464fe4a9672c2da5289f405134";
+    // Set via env var in production (Render/K8s Secret). The default below is ONLY for local
+    // dev convenience - it is a throwaway value, never use it in any deployed environment.
+    @Value("${app.jwt.secret:local-dev-only-e10b78657aba0a9718458e19f180446aa2149a10dd7367dfa224d936262e2eae}")
+    private String SECRET;
     private final long EXPIRATION = 1000 * 60 * 60 * 24; // 24 hours
 
     public String generateToken(UserPrincipal user) {
